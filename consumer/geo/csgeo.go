@@ -32,7 +32,8 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", Sleeper)
-	r.HandleFunc("/consumer/@{longtitude:[0-9]+},{latitude:[0-9]+}", ConsumerHandler)
+	//r.HandleFunc("/consumer/@{longtitude:[0-9]+},{latitude:[0-9]+}", ConsumerHandler)
+	r.HandleFunc("/consumer/@{longtitude:[0-9]+.?[0-9]+},{latitude:[0-9]+.?[0-9]+}", ConsumerHandler)
 	http.Handle("/", r)
 
 	log.Printf("Start Go HTTP Server")
