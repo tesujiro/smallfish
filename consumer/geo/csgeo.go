@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -26,7 +25,15 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Fprintf(w, "URL=%v\n", r.URL)
 	fmt.Fprintf(w, "Vars=%v\n", vars)
-	io.WriteString(w, "hello, world!\n")
+	fmt.Fprintf(w, "longtitude=%v\n", vars["longtitude"])
+	fmt.Fprintf(w, "latitude=%v\n", vars["latitude"])
+	//log.Printf("URL=%v\n", r.URL)
+	log.Printf("Vars=%v\n", vars)
+	log.Printf("longtitude=%v\n", vars["longtitude"])
+	log.Printf("latitude=%v\n", vars["latitude"])
+
+	w.WriteHeader(http.StatusOK)
+	w.Header().Set("Content-Type", "application/json")
 }
 
 func main() {
