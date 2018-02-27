@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 )
 
 func Sleeper(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Sleeper!!")
 	q := r.URL.Query()
 	i, _ := strconv.Atoi(q.Get("timer"))
 	time.Sleep(time.Duration(i) * time.Millisecond)
@@ -19,11 +21,12 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 }
 
 func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
-	log.Printf("ConsumerHandler")
+	log.Printf("ConsumerHandler!!")
 	vars := mux.Vars(r)
 
 	fmt.Fprintf(w, "URL=%v\n", r.URL)
 	fmt.Fprintf(w, "Vars=%v\n", vars)
+	io.WriteString(w, "hello, world!\n")
 }
 
 func main() {
@@ -32,8 +35,7 @@ func main() {
 
 	r := mux.NewRouter()
 	r.HandleFunc("/", Sleeper)
-	//r.HandleFunc("/consumer/@{longtitude:[0-9]+},{latitude:[0-9]+}", ConsumerHandler)
-	r.HandleFunc("/consumer/@{longtitude:[0-9]+.?[0-9]+},{latitude:[0-9]+.?[0-9]+}", ConsumerHandler)
+	r.HandleFunc("/consumer/@{longtitude:[0-9]+},{latitude:[0-9]+}", ConsumerHandler)
 	http.Handle("/", r)
 
 	log.Printf("Start Go HTTP Server")

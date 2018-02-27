@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,19 +10,27 @@ import (
 func TestHandler(t *testing.T) {
 
 	cases := []struct {
+		url    string
 		err    error
 		status int
 	}{
-		{err: nil, status: 200},
+		{url: "", err: nil, status: 200},
+		{url: "/", err: nil, status: 200},
+		{url: "/@123,456", err: nil, status: 200},
 	}
 
 	for _, c := range cases {
 		// Test Server
-		handler := http.HandlerFunc(Sleeper)
+		handler := http.HandlerFunc(ConsumerHandler)
 		ts := httptest.NewServer(handler)
 		defer ts.Close()
 
+		//ts.URL += "/@123aaa.,456"
+		ts.URL += c.url
 		res, err := http.Get(ts.URL)
+		fmt.Printf("URL=%v\n", ts.URL)
+		fmt.Printf("res.Body=%v\n", res.Body)
+
 		if actual, expected := err, c.err; actual != expected {
 			t.Errorf("Error: got %v\nwant %v", actual, expected)
 			return
