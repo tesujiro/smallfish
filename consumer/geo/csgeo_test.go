@@ -17,6 +17,7 @@ func TestHandler(t *testing.T) {
 	}{
 		//{url: "", err: nil, status: 200},
 		{method: "GET", url: "/", err: nil, status: http.StatusOK},
+		{method: "GET", url: "/xxx", err: nil, status: http.StatusNotFound},
 		{method: "GET", url: "/consumer/@123,456", err: nil, status: http.StatusOK},
 		{method: "GET", url: "/consumer/@123.11,456.23", err: nil, status: http.StatusOK},
 	}
