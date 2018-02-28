@@ -40,7 +40,7 @@ func Router() *mux.Router {
 	r := mux.NewRouter()
 	//r.HandleFunc("/employees/{1}", employeeHandler)
 	r.HandleFunc("/", Sleeper)
-	r.HandleFunc("/consumer/@{longtitude:[0-9]+},{latitude:[0-9]+}", ConsumerHandler)
+	r.HandleFunc("/consumer/@{longtitude:[0-9]+.?[0-9]+},{latitude:[0-9]+.?[0-9]+}", ConsumerHandler)
 	return r
 }
 
@@ -48,10 +48,6 @@ func main() {
 	port := flag.Int("port", 80, "port number")
 	flag.Parse()
 
-	//r := mux.NewRouter()
-	//r.HandleFunc("/", Sleeper)
-	//r.HandleFunc("/consumer/@{longtitude:[0-9]+},{latitude:[0-9]+}", ConsumerHandler)
-	//http.Handle("/", r)
 	http.Handle("/", Router())
 
 	log.Printf("Start Go HTTP Server")

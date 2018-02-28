@@ -10,17 +10,19 @@ import (
 func TestHandler(t *testing.T) {
 
 	cases := []struct {
+		method string
 		url    string
 		err    error
 		status int
 	}{
 		//{url: "", err: nil, status: 200},
-		{url: "/", err: nil, status: 200},
-		{url: "/consumer/@123,456", err: nil, status: 200},
+		{method: "GET", url: "/", err: nil, status: http.StatusOK},
+		{method: "GET", url: "/consumer/@123,456", err: nil, status: http.StatusOK},
+		{method: "GET", url: "/consumer/@123.11,456.23", err: nil, status: http.StatusOK},
 	}
 
 	for _, c := range cases {
-		r, err := http.NewRequest("GET", c.url, nil)
+		r, err := http.NewRequest(c.method, c.url, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
