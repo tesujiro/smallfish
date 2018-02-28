@@ -39,6 +39,7 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 func Router() *mux.Router {
 	r := mux.NewRouter()
 	//r.HandleFunc("/employees/{1}", employeeHandler)
+	r.HandleFunc("/", Sleeper)
 	r.HandleFunc("/consumer/@{longtitude:[0-9]+},{latitude:[0-9]+}", ConsumerHandler)
 	return r
 }

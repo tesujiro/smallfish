@@ -15,50 +15,25 @@ func TestHandler(t *testing.T) {
 		status int
 	}{
 		//{url: "", err: nil, status: 200},
-		//{url: "/", err: nil, status: 200},
+		{url: "/", err: nil, status: 200},
 		{url: "/consumer/@123,456", err: nil, status: 200},
 	}
 
 	for _, c := range cases {
-		req, err := http.NewRequest("GET", c.url, nil)
+		r, err := http.NewRequest("GET", c.url, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		rr := httptest.NewRecorder()
-		handler := http.HandlerFunc(ConsumerHandler)
+		w := httptest.NewRecorder()
+		Router().ServeHTTP(w, r)
 
-		handler.ServeHTTP(rr, req)
-
-		if status := rr.Code; status != c.status {
+		if status := w.Code; status != c.status {
 			t.Errorf("handler returned wrong status code: got %v want %v",
 				status, c.status)
 		}
-		fmt.Printf("rr.Body=%v\n", rr.Body.String())
-		//fmt.Printf("rr=%v\n", rr)
+		fmt.Printf("w.Body=%v\n", w.Body.String())
 
-		/*
-			// Test Server
-			handler := http.HandlerFunc(ConsumerHandler)
-			ts := httptest.NewServer(handler)
-			defer ts.Close()
-
-			//ts.URL += "/@123aaa.,456"
-			ts.URL += c.url
-			res, err := http.Get(ts.URL)
-			fmt.Printf("URL=%v\n", ts.URL)
-			fmt.Printf("res.Body=%v\n", res.Body)
-
-			if actual, expected := err, c.err; actual != expected {
-				t.Errorf("Error: got %v\nwant %v", actual, expected)
-				return
-			}
-
-			if actual, expected := res.StatusCode, c.status; actual != expected {
-				t.Errorf("StatusCode:got %v\nwant %v", actual, expected)
-				return
-			}
-		*/
 	}
 }
 
