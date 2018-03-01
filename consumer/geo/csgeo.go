@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"log"
@@ -19,28 +20,48 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, World :slept %d msec\n", i)
 }
 
+type ConsumerGeoInfo struct {
+	ConsumerId int     `json:"consumerId"`
+	Lat        float64 `json:"latitude"`
+	Lng        float64 `json:"longtitude"`
+}
+
 func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ConsumerHandler!!")
 	vars := mux.Vars(r)
+	//lat, lng := vars["latitude"], vars["longtitude"]
+	lat, err := strconv.ParseFloat(vars["latitude"], 64)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
+	lng, err := strconv.ParseFloat(vars["longtitude"], 64)
+	if err != nil {
+		log.Fatal(err)
+		return
+	}
 
-	fmt.Fprintf(w, "URL=%v\n", r.URL)
-	fmt.Fprintf(w, "Vars=%v\n", vars)
-	fmt.Fprintf(w, "longtitude=%v\n", vars["longtitude"])
-	fmt.Fprintf(w, "latitude=%v\n", vars["latitude"])
-	//log.Printf("URL=%v\n", r.URL)
-	log.Printf("Vars=%v\n", vars)
-	log.Printf("longtitude=%v\n", vars["longtitude"])
-	log.Printf("latitude=%v\n", vars["latitude"])
+	geo := ConsumerGeoInfo{Lat: lat, Lng: lng}
 
-	w.WriteHeader(http.StatusOK)
+	//fmt.Fprintf(w, "longtitude=%v\n", lng)
+	log.Printf("geo=%v\n", geo)
+
 	w.Header().Set("Content-Type", "application/json")
+	if err := json.NewEncoder(w).Encode(geo); err != nil {
+		log.Print("json.NewEncoder error!\n")
+		log.Fatal(err)
+	}
+	//w.WriteHeader(http.StatusOK)
+	//w.WriteHeader(http.StatusNotFound)
+
+	//w.Write([]byte("aaabbbccc"))
 }
 
 func Router() *mux.Router {
 	r := mux.NewRouter()
 	//r.HandleFunc("/employees/{1}", employeeHandler)
-	r.HandleFunc("/", Sleeper)
-	r.HandleFunc("/consumer/@{longtitude:[0-9]+.?[0-9]+},{latitude:[0-9]+.?[0-9]+}", ConsumerHandler)
+	//r.HandleFunc("/", Sleeper)
+	r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler)
 	return r
 }
 
