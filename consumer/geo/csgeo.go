@@ -47,12 +47,13 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("geo=%v\n", geo)
 
 	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+	//w.WriteHeader(http.StatusNotFound)
+
 	if err := json.NewEncoder(w).Encode(geo); err != nil {
 		log.Print("json.NewEncoder error!\n")
 		log.Fatal(err)
 	}
-	//w.WriteHeader(http.StatusOK)
-	//w.WriteHeader(http.StatusNotFound)
 
 	//w.Write([]byte("aaabbbccc"))
 }
