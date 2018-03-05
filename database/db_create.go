@@ -30,7 +30,14 @@ func main() {
 		definition string
 	}{
 		{class: "DATABASE", name: db_consumer_geo, definition: ""},
-		{class: "TABLE", name: "location", definition: "(id INT, time TIMESTAMPTZ, lat NUMERIC, lng NUMERIC, CONSTRAINT \"primary\" PRIMARY KEY (id,time))"},
+		{class: "TABLE", name: "location",
+			definition: `(
+				id INT,
+				time TIMESTAMPTZ,
+				lat NUMERIC,
+				lng NUMERIC,
+				CONSTRAINT "primary" PRIMARY KEY (id,time)
+			)`},
 	}
 	for _, obj := range objs {
 		ddl := fmt.Sprintf("CREATE %s IF NOT EXISTS %s %s", obj.class, obj.name, obj.definition)
