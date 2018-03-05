@@ -1,4 +1,4 @@
-package main
+package geo
 
 import (
 	"encoding/json"
@@ -29,7 +29,6 @@ type ConsumerGeoInfo struct {
 func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ConsumerHandler!!")
 	vars := mux.Vars(r)
-	//lat, lng := vars["latitude"], vars["longtitude"]
 	lat, err := strconv.ParseFloat(vars["latitude"], 64)
 	if err != nil {
 		log.Fatal(err)
@@ -43,7 +42,6 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 
 	geo := ConsumerGeoInfo{Lat: lat, Lng: lng}
 
-	//fmt.Fprintf(w, "longtitude=%v\n", lng)
 	log.Printf("geo=%v\n", geo)
 
 	w.Header().Set("Content-Type", "application/json")
@@ -54,8 +52,6 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 		log.Print("json.NewEncoder error!\n")
 		log.Fatal(err)
 	}
-
-	//w.Write([]byte("aaabbbccc"))
 }
 
 func Router() *mux.Router {
