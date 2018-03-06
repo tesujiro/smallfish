@@ -1,6 +1,7 @@
-package geo
+package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/gorilla/mux"
+	_ "github.com/lib/pq"
 )
 
 func Sleeper(w http.ResponseWriter, r *http.Request) {
@@ -18,6 +20,22 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 	i, _ := strconv.Atoi(q.Get("timer"))
 	time.Sleep(time.Duration(i) * time.Millisecond)
 	fmt.Fprintf(w, "Hello, World :slept %d msec\n", i)
+}
+
+const db_port = 30257
+const db_host = "localhost"
+const db_user = "root"
+const db_consumer_geo = "consumer_geo"
+
+func connect() (*sql.DB, error) {
+	// Connect to the database.
+	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", db_user, db_host, db_port, db_consumer_geo)
+	db, err := sql.Open("postgres", url)
+	if err != nil {
+		log.Fatal("error connecting to the database: ", err)
+		fmt.Println("error connecting to the database: ", err)
+	}
+	return db, err
 }
 
 type ConsumerGeoInfo struct {
@@ -42,6 +60,46 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 
 	geo := ConsumerGeoInfo{Lat: lat, Lng: lng}
 
+	db, err := connect()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	log.Printf("connected database!!")
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer tx.Rollback()
+
+	// Insert two rows into the "location" table.
+	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES (?,?,?,?)")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer stmt.Close() // danger!
+
+	res, err := stmt.Exec(geo.ConsumerId, time.Now(), geo.Lat, geo.Lng)
+	if err != nil {
+		log.Fatal(err)
+	}
+	lastId, err := res.LastInsertId()
+	if err != nil {
+		log.Fatal(err)
+	}
+	rowCnt, err := res.RowsAffected()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
+
+	err = tx.Commit()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println("insert table finished!!")
 	log.Printf("geo=%v\n", geo)
 
 	w.Header().Set("Content-Type", "application/json")
