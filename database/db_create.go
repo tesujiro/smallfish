@@ -25,12 +25,25 @@ func main() {
 	defer db.Close()
 	//fmt.Println("sql.Open finished!!")
 
+	ddls := []string{
+		"CREATE USER " + db_user,
+		"CREATE DATABASE " + db_consumer_geo,
+		"GRANT ALL ON DATABASE " + db_consumer_geo + " TO " + db_user,
+	}
+	for _, ddl := range ddls {
+		if _, err := db.Exec(ddl); err != nil {
+			fmt.Printf("failed!! :%v\n", ddl)
+			log.Print(err)
+		} else {
+			fmt.Printf("finished: %v\n", ddl)
+		}
+	}
+
 	objs := []struct {
 		class      string
 		name       string
 		definition string
 	}{
-		{class: "DATABASE", name: db_consumer_geo, definition: ""},
 		{class: "TABLE", name: "location",
 			definition: `(
 				id INT,
@@ -50,15 +63,4 @@ func main() {
 		}
 	}
 
-	ddls := []string{
-		"GRANT ALL ON DATABASE " + db_consumer_geo + " TO " + db_user,
-	}
-	for _, ddl := range ddls {
-		if _, err := db.Exec(ddl); err != nil {
-			fmt.Printf("failed!! :%v\n", ddl)
-			log.Print(err)
-		} else {
-			fmt.Printf("finished: %v\n", ddl)
-		}
-	}
 }
