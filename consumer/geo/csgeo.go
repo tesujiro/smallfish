@@ -72,32 +72,41 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 	defer tx.Rollback()
+	log.Printf("transaction begin!!")
 
 	// Insert two rows into the "location" table.
-	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES (?,?,?,?)")
+	//stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES (?,?,?,?)")
+	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES ($1,now(),$2,$3)")
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer stmt.Close() // danger!
+	log.Printf("prepare statement!!")
 
-	res, err := stmt.Exec(geo.ConsumerId, time.Now(), geo.Lat, geo.Lng)
+	//res, err := stmt.Exec(geo.ConsumerId, time.Now(), geo.Lat, geo.Lng)
+	_, err = stmt.Exec(geo.ConsumerId, geo.Lat, geo.Lng)
 	if err != nil {
 		log.Fatal(err)
 	}
-	lastId, err := res.LastInsertId()
-	if err != nil {
-		log.Fatal(err)
-	}
-	rowCnt, err := res.RowsAffected()
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
+	log.Printf("execute statement!!")
+
+	/*
+		lastId, err := res.LastInsertId()
+		if err != nil {
+			log.Fatal(err)
+		}
+		rowCnt, err := res.RowsAffected()
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
+	*/
 
 	err = tx.Commit()
 	if err != nil {
 		log.Fatal(err)
 	}
+	fmt.Println("commit finished!!")
 
 	fmt.Println("insert table finished!!")
 	log.Printf("geo=%v\n", geo)
