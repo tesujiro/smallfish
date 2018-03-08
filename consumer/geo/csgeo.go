@@ -24,15 +24,14 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 
 const db_port = 30257
 const db_host = "localhost"
-const db_user = "root"
+const db_user = "maxroach"
 const db_consumer_geo = "consumer_geo"
 
 func connect() (*sql.DB, error) {
-	// Connect to the database.
 	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", db_user, db_host, db_port, db_consumer_geo)
 	db, err := sql.Open("postgres", url)
 	if err != nil {
-		log.Fatal("error connecting to the database: ", err)
+		//log.Fatal("error connecting to the database: ", err)
 		fmt.Println("error connecting to the database: ", err)
 	}
 	return db, err
@@ -84,7 +83,7 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("prepare statement!!")
 
 	//res, err := stmt.Exec(geo.ConsumerId, time.Now(), geo.Lat, geo.Lng)
-	_, err = stmt.Exec(geo.ConsumerId, geo.Lat, geo.Lng)
+	res, err := stmt.Exec(geo.ConsumerId, geo.Lat, geo.Lng)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -95,12 +94,13 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		rowCnt, err := res.RowsAffected()
-		if err != nil {
-			log.Fatal(err)
-		}
 		log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
 	*/
+	rowCnt, err := res.RowsAffected()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("affected = %d\n", rowCnt)
 
 	err = tx.Commit()
 	if err != nil {
