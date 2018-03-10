@@ -9,13 +9,13 @@ spec:
       app: csgeo
   template:
     metadata:
-      labels: # labelに下記の値を設定
+      labels: 
         app: csgeo
         #version: v1
     spec:
       containers:
       - name: csgeo
-        image: csgeo
+        image: localhost:5000/csgeo
         ports:
         - containerPort: 80
 ---
@@ -24,7 +24,9 @@ kind: Service
 metadata:
   name: csgeo
 spec:
-  type: ClusterIP
+  #type: ClusterIP
+  #type: LoadBalancer
+  type: NodePort
   ports:
   - protocol: TCP
     port: 80
@@ -32,4 +34,4 @@ spec:
     name: http
   selector:
     app: csgeo
-    version: v1
+    #version: v1
