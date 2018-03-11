@@ -22,13 +22,14 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, World :slept %d msec\n", i)
 }
 
-const db_port = 30257
 const db_user = "maxroach"
 const db_consumer_geo = "consumer_geo"
 
 //const db_host = "localhost"
-//const db_host = "dockroachdb-public"
+//const db_host = "cockroachdb-public"
+//const db_port = 30257
 var db_host string
+var db_port int
 
 func connect() (*sql.DB, error) {
 	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", db_user, db_host, db_port, db_consumer_geo)
@@ -136,8 +137,10 @@ func Router() *mux.Router {
 func main() {
 	port := flag.Int("port", 80, "port number")
 	dbserver := flag.String("dbserver", "localhost", "database server")
+	dbport := flag.Int("dbport", 30257, "database port")
 	flag.Parse()
 	db_host = *dbserver
+	db_port = *dbport
 
 	http.Handle("/", Router())
 
