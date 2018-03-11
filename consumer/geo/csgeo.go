@@ -23,9 +23,12 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 }
 
 const db_port = 30257
-const db_host = "localhost"
 const db_user = "maxroach"
 const db_consumer_geo = "consumer_geo"
+
+//const db_host = "localhost"
+//const db_host = "dockroachdb-public"
+var db_host string
 
 func connect() (*sql.DB, error) {
 	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", db_user, db_host, db_port, db_consumer_geo)
@@ -68,6 +71,7 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 
 	tx, err := db.Begin()
 	if err != nil {
+		log.Printf("transaction begin faled!!")
 		log.Fatal(err)
 	}
 	defer tx.Rollback()
@@ -131,7 +135,9 @@ func Router() *mux.Router {
 
 func main() {
 	port := flag.Int("port", 80, "port number")
+	dbserver := flag.String("dbserver", "localhost", "database server")
 	flag.Parse()
+	db_host = *dbserver
 
 	http.Handle("/", Router())
 

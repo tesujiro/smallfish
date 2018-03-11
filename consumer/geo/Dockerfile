@@ -1,6 +1,6 @@
 FROM centos
 MAINTAINER tesujiro <tesujiro@gmail.com>
 RUN echo "now building..."
-ADD ./csgeo /tmp
+ADD ./csgeo /
 EXPOSE 80
-CMD ["/tmp/csgeo"]
+CMD ["/csgeo","-dbserver","cockroachdb-public"]
