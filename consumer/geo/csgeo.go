@@ -47,6 +47,66 @@ type ConsumerGeoInfo struct {
 	Lng        float64 `json:"longtitude"`
 }
 
+func addConsumerGeo(geo ConsumerGeoInfo) error {
+	db, err := connect()
+	if err != nil {
+		return err
+	}
+	log.Printf("connected database!!")
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Printf("transaction begin faled!!")
+		return err
+	}
+	defer tx.Rollback()
+	log.Printf("transaction begin!!")
+
+	// Insert two rows into the "location" table.
+	//stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES (?,?,?,?)")
+	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES ($1,now(),$2,$3)")
+	if err != nil {
+		log.Printf("prepare statement faled!!")
+		return err
+	}
+	defer stmt.Close() // danger!
+	log.Printf("prepare statement!!")
+
+	//res, err := stmt.Exec(geo.ConsumerId, time.Now(), geo.Lat, geo.Lng)
+	res, err := stmt.Exec(geo.ConsumerId, geo.Lat, geo.Lng)
+	if err != nil {
+		log.Printf("exec statement faled!!")
+		return err
+	}
+	log.Printf("execute statement!!")
+
+	/*
+		lastId, err := res.LastInsertId()
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
+	*/
+	rowCnt, err := res.RowsAffected()
+	if err != nil {
+		log.Printf("get rows affected faled!!")
+		return err
+	}
+	log.Printf("affected = %d\n", rowCnt)
+
+	err = tx.Commit()
+	if err != nil {
+		log.Printf("commit faled!!")
+		return err
+	}
+	fmt.Println("commit finished!!")
+
+	fmt.Println("insert table finished!!")
+	log.Printf("geo=%v\n", geo)
+
+	return nil
+}
+
 func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ConsumerHandler!!")
 	vars := mux.Vars(r)
@@ -63,58 +123,11 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 
 	geo := ConsumerGeoInfo{Lat: lat, Lng: lng}
 
-	db, err := connect()
-	if err != nil {
+	if err := addConsumerGeo(geo); err != nil {
+		log.Fatal(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Printf("connected database!!")
-
-	tx, err := db.Begin()
-	if err != nil {
-		log.Printf("transaction begin faled!!")
-		log.Fatal(err)
-	}
-	defer tx.Rollback()
-	log.Printf("transaction begin!!")
-
-	// Insert two rows into the "location" table.
-	//stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES (?,?,?,?)")
-	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES ($1,now(),$2,$3)")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer stmt.Close() // danger!
-	log.Printf("prepare statement!!")
-
-	//res, err := stmt.Exec(geo.ConsumerId, time.Now(), geo.Lat, geo.Lng)
-	res, err := stmt.Exec(geo.ConsumerId, geo.Lat, geo.Lng)
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("execute statement!!")
-
-	/*
-		lastId, err := res.LastInsertId()
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
-	*/
-	rowCnt, err := res.RowsAffected()
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Printf("affected = %d\n", rowCnt)
-
-	err = tx.Commit()
-	if err != nil {
-		log.Fatal(err)
-	}
-	fmt.Println("commit finished!!")
-
-	fmt.Println("insert table finished!!")
-	log.Printf("geo=%v\n", geo)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
