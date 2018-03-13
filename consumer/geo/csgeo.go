@@ -47,21 +47,7 @@ type ConsumerGeoInfo struct {
 	Lng        float64 `json:"longtitude"`
 }
 
-func addConsumerGeo(geo ConsumerGeoInfo) error {
-	db, err := connect()
-	if err != nil {
-		return err
-	}
-	log.Printf("connected database!!")
-
-	tx, err := db.Begin()
-	if err != nil {
-		log.Printf("transaction begin faled!!")
-		return err
-	}
-	defer tx.Rollback()
-	log.Printf("transaction begin!!")
-
+func addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
 	// Insert two rows into the "location" table.
 	//stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES (?,?,?,?)")
 	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES ($1,now(),$2,$3)")
@@ -94,16 +80,6 @@ func addConsumerGeo(geo ConsumerGeoInfo) error {
 	}
 	log.Printf("affected = %d\n", rowCnt)
 
-	err = tx.Commit()
-	if err != nil {
-		log.Printf("commit faled!!")
-		return err
-	}
-	fmt.Println("commit finished!!")
-
-	fmt.Println("insert table finished!!")
-	log.Printf("geo=%v\n", geo)
-
 	return nil
 }
 
@@ -123,11 +99,39 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 
 	geo := ConsumerGeoInfo{Lat: lat, Lng: lng}
 
-	if err := addConsumerGeo(geo); err != nil {
+	db, err := connect()
+	if err != nil {
+		log.Printf("database connect faled!!")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	log.Printf("connected database!!")
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Printf("transaction begin faled!!")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+	log.Printf("transaction begin!!")
+
+	if err := addConsumerGeo(db, geo); err != nil {
 		log.Fatal(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Printf("commit faled!!")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("commit finished!!")
+
+	fmt.Println("insert table finished!!")
+	log.Printf("geo=%v\n", geo)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
