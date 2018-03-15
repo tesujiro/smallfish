@@ -24,19 +24,19 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 
 const db_user = "maxroach"
 const db_consumer_geo = "consumer_geo"
+const db_host_default = "localhost"
+const db_port_default = 30257
 
-//const db_host = "localhost"
 //const db_host = "cockroachdb-public"
-//const db_port = 30257
 var db_host string
 var db_port int
 
 func connect() (*sql.DB, error) {
 	if db_host == "" {
-		db_host = "localhost"
+		db_host = db_host_default
 	}
 	if db_port == 0 {
-		db_port = 30257
+		db_port = db_port_default
 	}
 	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", db_user, db_host, db_port, db_consumer_geo)
 	db, err := sql.Open("postgres", url)
@@ -159,8 +159,8 @@ func Router() *mux.Router {
 
 func main() {
 	port := flag.Int("port", 80, "port number")
-	dbserver := flag.String("dbserver", "localhost", "database server")
-	dbport := flag.Int("dbport", 30257, "database port")
+	dbserver := flag.String("dbserver", db_host_default, "database server")
+	dbport := flag.Int("dbport", db_port_default, "database port")
 	flag.Parse()
 	db_host = *dbserver
 	db_port = *dbport
