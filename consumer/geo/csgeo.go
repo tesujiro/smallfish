@@ -32,6 +32,12 @@ var db_host string
 var db_port int
 
 func connect() (*sql.DB, error) {
+	if db_host == "" {
+		db_host = "localhost"
+	}
+	if db_port == 0 {
+		db_port = 30257
+	}
 	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", db_user, db_host, db_port, db_consumer_geo)
 	db, err := sql.Open("postgres", url)
 	if err != nil {
@@ -101,7 +107,7 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 
 	db, err := connect()
 	if err != nil {
-		log.Printf("database connect faled!!")
+		log.Printf("database connect failed!!")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -109,7 +115,7 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 
 	tx, err := db.Begin()
 	if err != nil {
-		log.Printf("transaction begin faled!!")
+		log.Printf("transaction begin failed!!")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -147,7 +153,7 @@ func Router() *mux.Router {
 	r := mux.NewRouter()
 	//r.HandleFunc("/employees/{1}", employeeHandler)
 	//r.HandleFunc("/", Sleeper)
-	r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler)
+	r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler).Methods("GET")
 	return r
 }
 
