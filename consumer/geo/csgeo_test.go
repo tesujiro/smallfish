@@ -1,4 +1,4 @@
-package main
+package csgeo
 
 import (
 	"bytes"
@@ -14,12 +14,12 @@ import (
 
 func TestHandler(t *testing.T) {
 
-	config := &Config{}
-	if err := config.Init(); err != nil {
+	config, err := NewConfig()
+	if err != nil {
 		log.Printf("init config failed: %v", err)
 	}
 
-	consumer := &Consumer{config: *config}
+	consumer := NewConsumer(config)
 
 	cases := []struct {
 		method string

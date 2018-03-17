@@ -1,4 +1,4 @@
-package main
+package csgeo
 
 import (
 	"database/sql"
@@ -24,6 +24,10 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 
 type Consumer struct {
 	config Config
+}
+
+func NewConsumer(c *Config) *Consumer {
+	return &Consumer{config: *c}
 }
 
 type ConsumerGeoInfo struct {
@@ -161,7 +165,7 @@ func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 
 	for _, geo := range geos {
 		log.Printf("%v\n", geo)
-		if err := addConsumerGeo(db, geo); err != nil {
+		if err := c.addConsumerGeo(db, geo); err != nil {
 			log.Fatal(err)
 			w.WriteHeader(http.StatusInternalServerError)
 			return
@@ -187,18 +191,20 @@ func (c *Consumer) Router() *mux.Router {
 	return r
 }
 
-func main() {
-	config := &Config{}
-	if err := config.Init(); err != nil {
+func Run() {
+
+	config, err := NewConfig()
+	if err != nil {
 		log.Printf("init config failed: %v", err)
 	}
 
-	c := &Consumer{config: *config}
-	http.Handle("/", c.Router())
+	consumer := NewConsumer(config)
+
+	http.Handle("/", consumer.Router())
 
 	log.Printf("Start Go HTTP Server")
 
-	err := http.ListenAndServe(":"+strconv.Itoa(c.config.http_port), nil)
+	err = http.ListenAndServe(":"+strconv.Itoa(consumer.config.http_port), nil)
 
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)
