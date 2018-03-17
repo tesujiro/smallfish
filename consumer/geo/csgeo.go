@@ -1,6 +1,7 @@
 package csgeo
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
@@ -191,7 +192,7 @@ func (c *Consumer) Router() *mux.Router {
 	return r
 }
 
-func Run() {
+func Run(ctx context.Context) {
 
 	config, err := NewConfig()
 	if err != nil {
