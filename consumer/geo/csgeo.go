@@ -3,7 +3,6 @@ package main
 import (
 	"database/sql"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"log"
@@ -23,29 +22,8 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Hello, World :slept %d msec\n", i)
 }
 
-const db_user = "maxroach"
-const db_consumer_geo = "consumer_geo"
-const db_host_default = "localhost"
-const db_port_default = 30257
-
-//const db_host = "cockroachdb-public"
-var db_host string
-var db_port int
-
-func connect() (*sql.DB, error) {
-	if db_host == "" {
-		db_host = db_host_default
-	}
-	if db_port == 0 {
-		db_port = db_port_default
-	}
-	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", db_user, db_host, db_port, db_consumer_geo)
-	db, err := sql.Open("postgres", url)
-	if err != nil {
-		//log.Fatal("error connecting to the database: ", err)
-		fmt.Println("error connecting to the database: ", err)
-	}
-	return db, err
+type Consumer struct {
+	config Config
 }
 
 type ConsumerGeoInfo struct {
@@ -55,7 +33,17 @@ type ConsumerGeoInfo struct {
 	Lng        float64   `json:"longtitude"`
 }
 
-func addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
+func (c *Consumer) connect() (*sql.DB, error) {
+	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", c.config.db_user, c.config.db_host, c.config.db_port, c.config.db_name)
+	db, err := sql.Open("postgres", url)
+	if err != nil {
+		//log.Fatal("error connecting to the database: ", err)
+		fmt.Println("error connecting to the database: ", err)
+	}
+	return db, err
+}
+
+func (c *Consumer) addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
 	// Insert two rows into the "location" table.
 	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES ($1,$2,$3,$4)")
 	if err != nil {
@@ -89,6 +77,7 @@ func addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
 	return nil
 }
 
+/*
 func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ConsumerHandler!!")
 	vars := mux.Vars(r)
@@ -105,39 +94,7 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 
 	geo := ConsumerGeoInfo{Lat: lat, Lng: lng}
 
-	db, err := connect()
-	if err != nil {
-		log.Printf("database connect failed!!")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	log.Printf("connected database!!")
-
-	tx, err := db.Begin()
-	if err != nil {
-		log.Printf("transaction begin failed!!")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	defer tx.Rollback()
-	log.Printf("transaction begin!!")
-
-	if err := addConsumerGeo(db, geo); err != nil {
-		log.Fatal(err)
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		log.Printf("commit faled!!")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	fmt.Println("commit finished!!")
-
-	fmt.Println("insert table finished!!")
-	log.Printf("geo=%v\n", geo)
+	// CHU RYAKU!!
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -148,8 +105,9 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatal(err)
 	}
 }
+*/
 
-func ConsumerGeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
+func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ConsumerGeoCollectionWriter!!")
 
 	if r.Header.Get("Content-Type") != "application/json" {
@@ -184,7 +142,7 @@ func ConsumerGeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	db, err := connect()
+	db, err := c.connect()
 	if err != nil {
 		log.Printf("database connect failed!!")
 		w.WriteHeader(http.StatusInternalServerError)
@@ -221,27 +179,26 @@ func ConsumerGeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func Router() *mux.Router {
+func (c *Consumer) Router() *mux.Router {
 	r := mux.NewRouter()
 	//r.HandleFunc("/", Sleeper)
-	r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler).Methods("GET")
-	r.HandleFunc("/consumer/GeoCollection", ConsumerGeoCollectionWriter).Methods("POST")
+	//r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler).Methods("GET")
+	r.HandleFunc("/consumer/GeoCollection", c.GeoCollectionWriter).Methods("POST")
 	return r
 }
 
 func main() {
-	port := flag.Int("port", 80, "port number")
-	dbserver := flag.String("dbserver", db_host_default, "database server")
-	dbport := flag.Int("dbport", db_port_default, "database port")
-	flag.Parse()
-	db_host = *dbserver
-	db_port = *dbport
+	config := &Config{}
+	if err := config.Init(); err != nil {
+		log.Printf("init config failed: %v", err)
+	}
 
-	http.Handle("/", Router())
+	c := &Consumer{config: *config}
+	http.Handle("/", c.Router())
 
 	log.Printf("Start Go HTTP Server")
 
-	err := http.ListenAndServe(":"+strconv.Itoa(*port), nil)
+	err := http.ListenAndServe(":"+strconv.Itoa(c.config.http_port), nil)
 
 	if err != nil {
 		log.Fatal("ListenAndServe: ", err)

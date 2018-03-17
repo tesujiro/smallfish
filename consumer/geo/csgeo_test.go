@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"net/http/httptest"
 	"strconv"
@@ -12,6 +13,13 @@ import (
 )
 
 func TestHandler(t *testing.T) {
+
+	config := &Config{}
+	if err := config.Init(); err != nil {
+		log.Printf("init config failed: %v", err)
+	}
+
+	consumer := &Consumer{config: *config}
 
 	cases := []struct {
 		method string
@@ -44,7 +52,7 @@ func TestHandler(t *testing.T) {
 		r.Header.Set("Content-Length", strconv.Itoa(len(input)))
 
 		w := httptest.NewRecorder()
-		Router().ServeHTTP(w, r)
+		consumer.Router().ServeHTTP(w, r)
 
 		if status := w.Code; status != c.status {
 			t.Errorf("handler returned wrong status code: got %v want %v", status, c.status)
