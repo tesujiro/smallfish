@@ -224,7 +224,6 @@ func ConsumerGeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 
 func Router() *mux.Router {
 	r := mux.NewRouter()
-	//r.HandleFunc("/employees/{1}", employeeHandler)
 	//r.HandleFunc("/", Sleeper)
 	r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler).Methods("GET")
 	r.HandleFunc("/consumer/GeoCollection", ConsumerGeoCollectionWriter).Methods("POST")
