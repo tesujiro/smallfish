@@ -8,6 +8,7 @@ import (
 	"net/http/httptest"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func TestHandler(t *testing.T) {
@@ -22,10 +23,10 @@ func TestHandler(t *testing.T) {
 		//{url: "", err: nil, status: 200},
 		//{method: "GET", url: "/", err: nil, status: http.StatusOK},
 		{method: "GET", url: "/xxx", err: nil, status: http.StatusNotFound},
-		{method: "GET", url: "/consumer/@123.456,456.123", body: []ConsumerGeoInfo{}, err: nil, status: http.StatusOK},
+		//{method: "GET", url: "/consumer/@123.456,456.123", body: []ConsumerGeoInfo{}, err: nil, status: http.StatusOK},
 		{method: "POST", url: "/consumer/GeoCollection", body: []ConsumerGeoInfo{
-			ConsumerGeoInfo{ConsumerId: 1, Lat: 123.456, Lng: 456.789},
-			ConsumerGeoInfo{ConsumerId: 1, Lat: 123.999, Lng: 456.999},
+			ConsumerGeoInfo{ConsumerId: 1, Timestamp: time.Now(), Lat: 123.456, Lng: 456.789},
+			ConsumerGeoInfo{ConsumerId: 1, Timestamp: time.Now().Add(1 * time.Second), Lat: 123.999, Lng: 456.999},
 		}, err: nil, status: http.StatusOK},
 	}
 

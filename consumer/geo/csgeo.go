@@ -49,24 +49,23 @@ func connect() (*sql.DB, error) {
 }
 
 type ConsumerGeoInfo struct {
-	ConsumerId int     `json:"consumerId"`
-	Lat        float64 `json:"latitude"`
-	Lng        float64 `json:"longtitude"`
+	ConsumerId int       `json:"consumerId"`
+	Timestamp  time.Time `json:"timestamp"`
+	Lat        float64   `json:"latitude"`
+	Lng        float64   `json:"longtitude"`
 }
 
 func addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
 	// Insert two rows into the "location" table.
-	//stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES (?,?,?,?)")
-	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES ($1,now(),$2,$3)")
+	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES ($1,$2,$3,$4)")
 	if err != nil {
-		log.Printf("prepare statement faled!!")
+		log.Printf("prepare statement faled!! %v", err)
 		return err
 	}
 	defer stmt.Close() // danger!
 	log.Printf("prepare statement!!")
 
-	//res, err := stmt.Exec(geo.ConsumerId, time.Now(), geo.Lat, geo.Lng)
-	res, err := stmt.Exec(geo.ConsumerId, geo.Lat, geo.Lng)
+	res, err := stmt.Exec(geo.ConsumerId, geo.Timestamp, geo.Lat, geo.Lng)
 	if err != nil {
 		log.Printf("exec statement faled!!")
 		return err
