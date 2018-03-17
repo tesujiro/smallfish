@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -149,11 +150,84 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func ConsumerGeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
+	log.Printf("ConsumerGeoCollectionWriter!!")
+
+	if r.Header.Get("Content-Type") != "application/json" {
+		log.Printf("bad Content-Type!!")
+		log.Printf(r.Header.Get("Content-Type"))
+	}
+
+	//To allocate slice for request body
+	length, err := strconv.Atoi(r.Header.Get("Content-Length"))
+	if err != nil {
+		log.Printf("Content-Length failed!!")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	//Read body data to parse json
+	body := make([]byte, length)
+	length, err = r.Body.Read(body)
+	if err != nil && err != io.EOF {
+		log.Printf("read failed!!")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	log.Printf("Content-Length:%v", length)
+
+	var geos []ConsumerGeoInfo
+	err = json.Unmarshal(body[:length], &geos)
+	if err != nil {
+		log.Printf("json.Unmarshal failed!! %v", err)
+		log.Printf("json:%s", body[:length])
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	db, err := connect()
+	if err != nil {
+		log.Printf("database connect failed!!")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	log.Printf("connected database!!")
+
+	tx, err := db.Begin()
+	if err != nil {
+		log.Printf("transaction begin failed!!")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback()
+	log.Printf("transaction begin!!")
+
+	for _, geo := range geos {
+		log.Printf("%v\n", geo)
+		if err := addConsumerGeo(db, geo); err != nil {
+			log.Fatal(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+	}
+
+	err = tx.Commit()
+	if err != nil {
+		log.Printf("commit faled!!")
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	fmt.Println("commit finished!!")
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func Router() *mux.Router {
 	r := mux.NewRouter()
 	//r.HandleFunc("/employees/{1}", employeeHandler)
 	//r.HandleFunc("/", Sleeper)
 	r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler).Methods("GET")
+	r.HandleFunc("/consumer/GeoCollection", ConsumerGeoCollectionWriter).Methods("POST")
 	return r
 }
 
