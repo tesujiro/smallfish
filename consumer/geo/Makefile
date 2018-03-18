@@ -1,7 +1,7 @@
 MODULE=csgeo
 GOOS=linux
 
-all: build deploy
+all: test build deploy
 
 build: build_module build_container
 
@@ -23,3 +23,6 @@ restart_container:
 	for p in `kubectl get pod | grep $(MODULE) | awk '{print $$1}'`;do\
 		kubectl delete pod $$p;\
 	done
+
+test:
+	go test . -v
