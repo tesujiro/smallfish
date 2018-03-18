@@ -1,5 +1,5 @@
 MODULE=csgeo
-GOOS=linux go build -o $MODULE .
+GOOS=linux go build -o $MODULE ./cmd/csgeo.go
 docker build -t $MODULE .
 docker tag $MODULE localhost:5000/$MODULE
 docker push localhost:5000/$MODULE
