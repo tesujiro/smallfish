@@ -56,14 +56,12 @@ func (c *Consumer) addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
 		return err
 	}
 	defer stmt.Close() // danger!
-	log.Printf("prepare statement!!")
 
 	res, err := stmt.Exec(geo.ConsumerId, geo.Timestamp, geo.Lat, geo.Lng)
 	if err != nil {
 		log.Printf("exec statement faled!!")
 		return err
 	}
-	log.Printf("execute statement!!")
 
 	/*
 		lastId, err := res.LastInsertId()
@@ -147,13 +145,13 @@ func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//database
 	db, err := c.connect()
 	if err != nil {
 		log.Printf("database connect failed!!")
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	log.Printf("connected database!!")
 
 	tx, err := db.Begin()
 	if err != nil {
@@ -162,7 +160,6 @@ func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer tx.Rollback()
-	log.Printf("transaction begin!!")
 
 	for _, geo := range geos {
 		log.Printf("%v\n", geo)
@@ -179,16 +176,15 @@ func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	fmt.Println("commit finished!!")
 
 	w.WriteHeader(http.StatusOK)
 }
 
 func (c *Consumer) Router() *mux.Router {
 	r := mux.NewRouter()
-	//r.HandleFunc("/", Sleeper)
 	//r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler).Methods("GET")
 	r.HandleFunc("/consumer/GeoCollection", c.GeoCollectionWriter).Methods("POST")
+	r.HandleFunc("/", Sleeper)
 	return r
 }
 

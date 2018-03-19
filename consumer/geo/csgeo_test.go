@@ -34,7 +34,7 @@ func TestHandler(t *testing.T) {
 		//{method: "GET", url: "/consumer/@123.456,456.123", body: []ConsumerGeoInfo{}, err: nil, status: http.StatusOK},
 		{method: "POST", url: "/consumer/GeoCollection", body: []ConsumerGeoInfo{
 			ConsumerGeoInfo{ConsumerId: 1, Timestamp: time.Now(), Lat: 123.456, Lng: 456.789},
-			ConsumerGeoInfo{ConsumerId: 1, Timestamp: time.Now().Add(1 * time.Second), Lat: 123.999, Lng: 456.999},
+			ConsumerGeoInfo{ConsumerId: 1, Timestamp: time.Now().Add(1000 * time.Nanosecond), Lat: 123.999, Lng: 456.999},
 		}, err: nil, status: http.StatusOK},
 	}
 
@@ -59,6 +59,5 @@ func TestHandler(t *testing.T) {
 		}
 		//fmt.Printf("w.Body=%v\n", w.Body.String())
 		fmt.Printf("w=%v\n", w)
-
 	}
 }
