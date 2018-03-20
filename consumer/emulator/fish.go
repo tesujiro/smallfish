@@ -22,22 +22,27 @@ const record_interval_sec = 1
 const send_interval_sec = 3
 const life_sec = 10
 
-func doRequest(ba []byte) error {
+type fish struct {
+	id   int
+	geos []geo.ConsumerGeoInfo
+}
+
+func (f *fish) doRequest(ba []byte) error {
 	url := fmt.Sprintf("http://%s:%d/consumer/GeoCollection", host, port)
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(ba))
 	if err != nil {
-		fmt.Printf("Request post failed.")
+		fmt.Printf("Request post failed.\n")
 		return err
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Printf("Read response body failed.")
+		fmt.Printf("Read response body failed.\n")
 		return err
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		fmt.Printf("Status Not OK :%s", resp.StatusCode)
+		fmt.Printf("Status Not OK :%s\n", resp.StatusCode)
 		return fmt.Errorf("Status Not OK : %d", resp.StatusCode)
 	}
 
@@ -45,22 +50,24 @@ func doRequest(ba []byte) error {
 	return nil
 }
 
-func request(id int) {
-	geos := []geo.ConsumerGeoInfo{
-		geo.ConsumerGeoInfo{ConsumerId: id, Timestamp: time.Now(), Lat: 123.456, Lng: 456.789},
-	}
-	ba, err := json.Marshal(geos)
+func (f *fish) request() {
+	ba, err := json.Marshal(f.geos)
 	if err != nil {
-		fmt.Printf("json.Marshal failed. error:%v", err)
+		fmt.Printf("json.Marshal failed. error:%v\n", err)
 		return
 	}
+	f.geos = []geo.ConsumerGeoInfo{}
 
-	if err := doRequest(ba); err != nil {
+	if err := f.doRequest(ba); err != nil {
 		fmt.Printf("http request error:%v", err)
 	}
 }
 
-func walk(id int, ctx context.Context) {
+func (f *fish) record() {
+	f.geos = append(f.geos, geo.ConsumerGeoInfo{ConsumerId: f.id, Timestamp: time.Now(), Lat: 123.456, Lng: 456.789})
+}
+
+func (f *fish) walk(ctx context.Context) {
 	send_tick := time.NewTicker(time.Second * time.Duration(send_interval_sec)).C
 	record_tick := time.NewTicker(time.Second * time.Duration(record_interval_sec)).C
 	stop := make(chan bool)
@@ -69,10 +76,11 @@ func walk(id int, ctx context.Context) {
 		for {
 			select {
 			case <-record_tick:
+				f.record()
 			case <-send_tick:
-				request(id)
+				f.request()
 			case <-stop:
-				request(id)
+				f.request()
 				break loop
 			}
 		}
@@ -102,11 +110,11 @@ func _main() int {
 	var wg sync.WaitGroup
 	for i := 1; i <= clients; i++ {
 		wg.Add(1)
-		id := i
-		go func() {
-			walk(id, ctx)
+		go func(id int) {
+			f := &fish{id: id}
+			f.walk(ctx)
 			wg.Done()
-		}()
+		}(i)
 	}
 	wg.Wait()
 
