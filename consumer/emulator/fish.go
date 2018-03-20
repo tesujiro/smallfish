@@ -12,14 +12,15 @@ import (
 	"sync"
 	"time"
 
-	//"github.com/tesujiro/smallfish/consumer/geo"
 	geo "github.com/tesujiro/smallfish/consumer/geo"
 )
 
 const port = 31080
 const host = "127.0.0.1"
 const clients = 10
-const request_interval_sec = 1
+const record_interval_sec = 1
+const send_interval_sec = 3
+const life_sec = 10
 
 func doRequest(ba []byte) error {
 	url := fmt.Sprintf("http://%s:%d/consumer/GeoCollection", host, port)
@@ -44,7 +45,7 @@ func doRequest(ba []byte) error {
 	return nil
 }
 
-func request(id int, ctx context.Context) {
+func request(id int) {
 	geos := []geo.ConsumerGeoInfo{
 		geo.ConsumerGeoInfo{ConsumerId: id, Timestamp: time.Now(), Lat: 123.456, Lng: 456.789},
 	}
@@ -57,6 +58,27 @@ func request(id int, ctx context.Context) {
 	if err := doRequest(ba); err != nil {
 		fmt.Printf("http request error:%v", err)
 	}
+}
+
+func walk(id int, ctx context.Context) {
+	send_tick := time.NewTicker(time.Second * time.Duration(send_interval_sec)).C
+	record_tick := time.NewTicker(time.Second * time.Duration(record_interval_sec)).C
+	stop := make(chan bool)
+	go func() {
+	loop:
+		for {
+			select {
+			case <-record_tick:
+			case <-send_tick:
+				request(id)
+			case <-stop:
+				request(id)
+				break loop
+			}
+		}
+	}()
+	time.Sleep(time.Second * time.Duration(life_sec))
+	close(stop)
 }
 
 func main() {
@@ -82,7 +104,7 @@ func _main() int {
 		wg.Add(1)
 		id := i
 		go func() {
-			request(id, ctx)
+			walk(id, ctx)
 			wg.Done()
 		}()
 	}
