@@ -2,19 +2,23 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"runtime"
+	"sync"
 	"time"
 
 	//"github.com/tesujiro/smallfish/consumer/geo"
-	g "github.com/tesujiro/smallfish/consumer/geo"
+	geo "github.com/tesujiro/smallfish/consumer/geo"
 )
 
 const port = 31080
 const host = "127.0.0.1"
-const fish = 10
+const clients = 10
 const request_interval_sec = 1
 
 func doRequest(ba []byte) error {
@@ -40,9 +44,9 @@ func doRequest(ba []byte) error {
 	return nil
 }
 
-func main() {
-	geos := []g.ConsumerGeoInfo{
-		g.ConsumerGeoInfo{ConsumerId: 1, Timestamp: time.Now(), Lat: 123.456, Lng: 456.789},
+func request(id int, ctx context.Context) {
+	geos := []geo.ConsumerGeoInfo{
+		geo.ConsumerGeoInfo{ConsumerId: id, Timestamp: time.Now(), Lat: 123.456, Lng: 456.789},
 	}
 	ba, err := json.Marshal(geos)
 	if err != nil {
@@ -53,4 +57,36 @@ func main() {
 	if err := doRequest(ba); err != nil {
 		fmt.Printf("http request error:%v", err)
 	}
+}
+
+func main() {
+	//csgeo.Run()
+	defer func() {
+		if err := recover(); err != nil {
+			fmt.Fprintf(os.Stderr, "Error:\n%s", err)
+			os.Exit(1)
+		}
+	}()
+	os.Exit(_main())
+}
+
+func _main() int {
+	if envvar := os.Getenv("GOMAXPROCS"); envvar == "" {
+		runtime.GOMAXPROCS(runtime.NumCPU())
+	}
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	var wg sync.WaitGroup
+	for i := 1; i <= clients; i++ {
+		wg.Add(1)
+		id := i
+		go func() {
+			request(id, ctx)
+			wg.Done()
+		}()
+	}
+	wg.Wait()
+
+	return 0
 }
