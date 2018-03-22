@@ -3,7 +3,8 @@
 # ------------------------------------------------------------------------------
 
 ## The StatefulSet installs 3 pods by default
-replicas: 3
+#replicas: 3
+replicas: 1
 
 ## The kafka image repository
 image: "confluentinc/cp-kafka"
@@ -17,7 +18,11 @@ imagePullPolicy: "IfNotPresent"
 
 ## Configure resource requests and limits
 ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
-resources: {}
+#resources: {}
+resources: 
+  requests:
+    cpu: 100m
+    memory: 512Mi
   # limits:
   #   cpu: 200m
   #   memory: 1536Mi
@@ -128,10 +133,15 @@ zookeeper:
 
   ## Configure Zookeeper resource requests and limits
   ## ref: http://kubernetes.io/docs/user-guide/compute-resources/
-  resources: {}
+  #resources: {}
+  resources: 
+    requests:
+      cpu: 100m
+      memory: 256Mi
 
   ## The JVM heap size to allocate to Zookeeper
-  heap: "1G"
+  #heap: "1G"
+  heap: "64M"
 
   ## The amount of PV storage allocated to each Zookeeper pod in the statefulset
   storage: "2Gi"
