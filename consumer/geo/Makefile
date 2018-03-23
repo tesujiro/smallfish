@@ -1,6 +1,12 @@
 MODULE=csgeo
 GOOS=linux
 
+install:
+	kubectl apply -f deploy.yaml
+
+delete:
+	kubectl delete -f deploy.yaml
+
 all: test build deploy
 
 build: build_module build_container
