@@ -69,7 +69,7 @@ tolerations: []
 ## External access.
 ##
 external:
-  enabled: false
+  enabled: true
   servicePort: 19092
   firstListenerPort: 31090
   domain: cluster.local

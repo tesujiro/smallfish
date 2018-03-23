@@ -11,6 +11,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/Shopify/sarama"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
 )
@@ -110,8 +111,42 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 }
 */
 
+func (c *Consumer) KafkaProduce(geos []ConsumerGeoInfo) error {
+	log.Printf("Start sending messages to Kafka\n")
+	// Setup configuration
+	config := sarama.NewConfig()
+	// Return specifies what channels will be populated.
+	// If they are set to true, you must read from
+	// config.Producer.Return.Successes = true
+	// The total number of times to retry sending a message (default 3).
+	config.Producer.Retry.Max = 5
+	// The level of acknowledgement reliability needed from the broker.
+	config.Producer.RequiredAcks = sarama.WaitForAll
+	//brokers := []string{"localhost:9092"}
+	//brokers := []string{"my-kafka-kafka:9092"}
+	brokers := []string{fmt.Sprintf("%s:%d", c.config.kafka_host, c.config.kafka_port)}
+	log.Printf("brokers=%v\n", brokers)
+	producer, err := sarama.NewAsyncProducer(brokers, config)
+	if err != nil {
+		// Should not reach here
+		panic(err)
+	}
+
+	defer func() {
+		if err := producer.Close(); err != nil {
+			// Should not reach here
+			panic(err)
+		}
+	}()
+
+	return nil
+}
+
 func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ConsumerGeoCollectionWriter!!")
+
+	var geos []ConsumerGeoInfo
+	c.KafkaProduce(geos)
 
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Printf("bad Content-Type!!")
@@ -136,7 +171,6 @@ func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Content-Length:%v", length)
 
-	var geos []ConsumerGeoInfo
 	err = json.Unmarshal(body[:length], &geos)
 	if err != nil {
 		log.Printf("json.Unmarshal failed!! %v", err)
