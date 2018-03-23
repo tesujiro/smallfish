@@ -13,7 +13,7 @@ install_kafka:
 
 delete: 
 	- helm delete --purge $(BROKER_NAME)
-	- helm delete --purge $(ZOOKEEPER_NAME)
+	#- helm delete --purge $(ZOOKEEPER_NAME)
 
 testclient:
 	kubectl apply -f testclient.yaml
@@ -22,4 +22,6 @@ delete_testclient:
 	kubectl delete po testclient
 
 conn:
-	kubectl exec -ti testclient -- ./bin/kafka-topics.sh --zookeeper $(BROKER_NAME)-zookeeper:2181 --list
+	kubectl exec -ti testclient -- /usr/bin/kafka-topics --zookeeper $(BROKER_NAME)-zookeeper:2181 --list
+	#kubectl exec -ti testclient -- ./bin/kafka-topics.sh --zookeeper $(BROKER_NAME)-zookeeper:2181 --list
+	#kubectl exec -ti testclient -- bash
