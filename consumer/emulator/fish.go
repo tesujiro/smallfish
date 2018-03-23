@@ -56,7 +56,6 @@ func (f *fish) request() {
 		fmt.Printf("json.Marshal failed. error:%v\n", err)
 		return
 	}
-	f.geos = []geo.ConsumerGeoInfo{}
 
 	if err := f.doRequest(ba); err != nil {
 		fmt.Printf("http request error:%v", err)
@@ -79,6 +78,7 @@ func (f *fish) walk(ctx context.Context) {
 				f.record()
 			case <-send_tick:
 				f.request()
+				f.geos = []geo.ConsumerGeoInfo{}
 			case <-stop:
 				f.request()
 				break loop
