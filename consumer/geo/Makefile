@@ -7,7 +7,8 @@ install:
 delete:
 	kubectl delete -f deploy.yaml
 
-all: test build deploy
+all: build deploy
+#all: test build deploy
 
 build: build_module build_container
 

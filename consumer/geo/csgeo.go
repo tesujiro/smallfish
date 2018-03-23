@@ -145,9 +145,6 @@ func (c *Consumer) KafkaProduce(geos []ConsumerGeoInfo) error {
 func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ConsumerGeoCollectionWriter!!")
 
-	var geos []ConsumerGeoInfo
-	c.KafkaProduce(geos)
-
 	if r.Header.Get("Content-Type") != "application/json" {
 		log.Printf("bad Content-Type!!")
 		log.Printf(r.Header.Get("Content-Type"))
@@ -171,6 +168,7 @@ func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Content-Length:%v", length)
 
+	var geos []ConsumerGeoInfo
 	err = json.Unmarshal(body[:length], &geos)
 	if err != nil {
 		log.Printf("json.Unmarshal failed!! %v", err)
@@ -178,6 +176,9 @@ func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
+	//Kafka
+	c.KafkaProduce(geos)
 
 	//database
 	db, err := c.connect()
