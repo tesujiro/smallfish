@@ -37,8 +37,6 @@ type ConsumerGeoInfo struct {
 	Lng        float64   `json:"longtitude"`
 }
 
-const topic = "new_topic"
-
 func (c *Consumer) KafkaProduce(key string, value string) error {
 	log.Printf("Start sending messages to Kafka\n")
 	// Setup configuration
@@ -68,7 +66,7 @@ func (c *Consumer) KafkaProduce(key string, value string) error {
 	}()
 
 	producer.Input() <- &sarama.ProducerMessage{
-		Topic: topic,
+		Topic: c.config.kafka_topic,
 		Key:   sarama.StringEncoder(key),
 		Value: sarama.StringEncoder(value),
 	}
