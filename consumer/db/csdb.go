@@ -104,36 +104,6 @@ func (c *Consumer) ConsumerGeoCollectionWriter(key, value []byte) error {
 	return nil
 }
 
-/*
-func Run(ctx context.Context) {
-
-	config, err := NewConfig()
-	if err != nil {
-		log.Printf("init config failed: %v", err)
-	}
-
-	consumer := NewConsumer(config)
-
-	http.Handle("/", consumer.Router())
-
-	log.Printf("Start Go HTTP Server")
-
-	err = http.ListenAndServe(":"+strconv.Itoa(consumer.config.http_port), nil)
-
-	if err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
-}
-*/
-/*
-const topic = "new_topic"
-const kafka_host_default = "my-kafka-kafka"
-const kafka_port_default = 9092
-
-const zookeeper_host_default = "my-kafka-zookeeper"
-const zookeeper_port_default = 2181
-*/
-
 func main() {
 
 	config, err := NewConfig()
@@ -147,9 +117,6 @@ func main() {
 	srmConf.Consumer.Return.Errors = true
 
 	// Specify brokers address. This is default one
-	//brokers := []string{"localhost:9092"}
-	//brokers := []string{fmt.Sprintf("%s:%d", zookeeper_host_default, zookeeper_port_default)}
-	//brokers := []string{fmt.Sprintf("%s:%d", kafka_host_default, kafka_port_default)}
 	brokers := []string{fmt.Sprintf("%s:%d", config.kafka_host, config.kafka_port)}
 	log.Println("brokers=" + brokers[0])
 
