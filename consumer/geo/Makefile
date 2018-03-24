@@ -32,4 +32,4 @@ restart_container:
 	done
 
 test:
-	go test . -v
+	GOCACHE=off go test . -v
