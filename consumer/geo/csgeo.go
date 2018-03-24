@@ -3,7 +3,6 @@ package csgeo
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -111,7 +110,9 @@ func ConsumerHandler(w http.ResponseWriter, r *http.Request) {
 }
 */
 
-func (c *Consumer) KafkaProduce(geos []ConsumerGeoInfo) error {
+const topic = "new_topic"
+
+func (c *Consumer) KafkaProduce(key string, value string) error {
 	log.Printf("Start sending messages to Kafka\n")
 	// Setup configuration
 	config := sarama.NewConfig()
@@ -138,6 +139,13 @@ func (c *Consumer) KafkaProduce(geos []ConsumerGeoInfo) error {
 			panic(err)
 		}
 	}()
+
+	producer.Input() <- &sarama.ProducerMessage{
+		Topic: topic,
+		Key:   sarama.StringEncoder(key),
+		Value: sarama.StringEncoder(value),
+	}
+	log.Printf("key=%v value=%v\n", key, value)
 
 	return nil
 }
@@ -168,50 +176,55 @@ func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 	}
 	log.Printf("Content-Length:%v", length)
 
-	var geos []ConsumerGeoInfo
-	err = json.Unmarshal(body[:length], &geos)
-	if err != nil {
-		log.Printf("json.Unmarshal failed!! %v", err)
-		log.Printf("json:%s", body[:length])
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
 	//Kafka
-	c.KafkaProduce(geos)
+	//c.KafkaProduce(fmt.Sprintf("%v %v", time.Now(), r.RemoteAddr), fmt.Sprintf("%v", geos))
+	//c.KafkaProduce(r.RemoteAddr, fmt.Sprintf("%v", geos))
+	c.KafkaProduce(r.RemoteAddr, string(body))
 
-	//database
-	db, err := c.connect()
-	if err != nil {
-		log.Printf("database connect failed!!")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-
-	tx, err := db.Begin()
-	if err != nil {
-		log.Printf("transaction begin failed!!")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	defer tx.Rollback()
-
-	for _, geo := range geos {
-		log.Printf("%v\n", geo)
-		if err := c.addConsumerGeo(db, geo); err != nil {
-			log.Fatal(err)
+	/*
+		var geos []ConsumerGeoInfo
+		err = json.Unmarshal(body[:length], &geos)
+		if err != nil {
+			log.Printf("json.Unmarshal failed!! %v", err)
+			log.Printf("json:%s", body[:length])
 			w.WriteHeader(http.StatusInternalServerError)
 			return
 		}
-	}
 
-	err = tx.Commit()
-	if err != nil {
-		log.Printf("commit faled!!")
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
 
+		//database
+		db, err := c.connect()
+		if err != nil {
+			log.Printf("database connect failed!!")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+		tx, err := db.Begin()
+		if err != nil {
+			log.Printf("transaction begin failed!!")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		defer tx.Rollback()
+
+		for _, geo := range geos {
+			log.Printf("%v\n", geo)
+			if err := c.addConsumerGeo(db, geo); err != nil {
+				log.Fatal(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				return
+			}
+		}
+
+		err = tx.Commit()
+		if err != nil {
+			log.Printf("commit faled!!")
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
+	*/
 	w.WriteHeader(http.StatusOK)
 }
 
