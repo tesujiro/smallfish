@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: csdb
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: csdb
+  template:
+    metadata:
+      labels: 
+        app: csdb
+        #version: v1
+    spec:
+      containers:
+      - name: csdb
+        image: localhost:5000/csdb
+        ports:
+        - containerPort: 80
