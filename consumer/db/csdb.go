@@ -133,7 +133,7 @@ func main() {
 	}()
 
 	// How to decide partition, is it fixed value...?
-	consumer, err := master.ConsumePartition(config.kafka_topic, 0, sarama.OffsetOldest)
+	consumer, err := master.ConsumePartition(config.kafka_topic, 0, sarama.OffsetNewest)
 	if err != nil {
 		panic(err)
 	}

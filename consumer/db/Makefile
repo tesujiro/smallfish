@@ -32,5 +32,8 @@ restart_container:
 		kubectl delete pod $$p;\
 	done
 
+log:
+	kubectl logs `kubectl get pod | grep $(MODULE) | awk '{print $$1}'` --follow
+
 test:
 	GOCACHE=off go test . -v
