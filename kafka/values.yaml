@@ -22,7 +22,7 @@ imagePullPolicy: "IfNotPresent"
 resources: 
   requests:
     cpu: 100m
-    memory: 512Mi
+    memory: 128Mi
   # limits:
   #   cpu: 200m
   #   memory: 1536Mi
@@ -95,8 +95,15 @@ configurationOverrides:
   ## Setting "advertised.listeners" here appends to "PLAINTEXT://${POD_IP}:9092,"
   # "advertised.listeners": |-
   #   EXTERNAL://kafka.cluster.local:$((31090 + ${KAFKA_BROKER_ID}))
+  "advertised.listeners": |-
+          EXTERNAL://my-kafka.cluster.local:$((31090 + ${KAFKA_BROKER_ID}))
+  #EXTERNAL://kafka.cluster.local:$((31090 + ${KAFKA_BROKER_ID}))
+  #EXTERNAL://localhost:31090,EXTERNAL://localhost:31091,EXTERNAL://localhost:31092
+  #EXTERNAL://kafka.cluster.local:31090,EXTERNAL://kafka.cluster.local:31091,EXTERNAL://kafka.cluster.local:31092
   # "listener.security.protocol.map": |-
   #   PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+  "listener.security.protocol.map": |-
+    PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
 
 ## Persistence configuration. Specify if and how to persist data to a persistent volume.
 ##

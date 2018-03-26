@@ -22,6 +22,10 @@ delete_testclient:
 	kubectl delete po testclient
 
 conn:
-	kubectl exec -ti testclient -- /usr/bin/kafka-topics --zookeeper $(BROKER_NAME)-zookeeper:2181 --list
-	#kubectl exec -ti testclient -- ./bin/kafka-topics.sh --zookeeper $(BROKER_NAME)-zookeeper:2181 --list
+	kubectl exec -ti testclient -- /usr/bin/kafka-console-consumer --zookeeper $(BROKER_NAME)-zookeeper:2181 --topic new_topic
+	#kubectl exec -ti testclient -- /usr/bin/kafka-topics --zookeeper $(BROKER_NAME)-zookeeper:2181 --list
 	#kubectl exec -ti testclient -- bash
+
+
+topics:
+	kubectl exec -ti testclient -- /usr/bin/kafka-topics --zookeeper $(BROKER_NAME)-zookeeper:2181 --describe
