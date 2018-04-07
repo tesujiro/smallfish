@@ -1,0 +1,18 @@
+<head>
+	<script>
+		window.onload = function() {
+			var startPos;
+			var geoSuccess = function(position) {
+				startPos = position;
+				console.log('Lat=' + startPos.coords.latitude + ' Lng=' + startPos.coords.longitude);
+				document.getElementById('startLat').innerHTML = startPos.coords.latitude;
+				document.getElementById('startLon').innerHTML = startPos.coords.longitude;
+			};
+			navigator.geolocation.getCurrentPosition(geoSuccess);
+		};
+	</script>
+</head>
+<body>
+	<div id="startLat"></div>
+	<div id="startLon"></div>
+</body>
