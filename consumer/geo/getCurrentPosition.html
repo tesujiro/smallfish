@@ -1,18 +1,46 @@
 <head>
+	<title>Simple Map</title>
+	<meta name="viewport" content="initial-scale=1.0">
+	<meta charset="utf-8">
 	<script>
-		window.onload = function() {
+		updateMap = function(lat,lng){
+			map = new google.maps.Map(document.getElementById('map'), {
+				center: {lat: lat, lng: lng},
+				zoom: 14
+			});
+		}
+	</script>
+	<script>
+		updateLocation = function() {
 			var startPos;
 			var geoSuccess = function(position) {
 				startPos = position;
 				console.log('Lat=' + startPos.coords.latitude + ' Lng=' + startPos.coords.longitude);
 				document.getElementById('startLat').innerHTML = startPos.coords.latitude;
 				document.getElementById('startLon').innerHTML = startPos.coords.longitude;
+				updateMap(startPos.coords.latitude,startPos.coords.longitude);
 			};
 			navigator.geolocation.getCurrentPosition(geoSuccess);
 		};
 	</script>
+	<style>
+html, body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+}
+	#map {
+		height: 500px;
+		width: 50%;
+	}
+	</style>
 </head>
 <body>
 	<div id="startLat"></div>
 	<div id="startLon"></div>
+	<div id="map"></div>
+	<script src="https://maps.googleapis.com/maps/api/js"></script>
+	<form name="update">
+		<input type="button" value="UPDATE" onClick="updateLocation()">
+	</form>
 </body>
