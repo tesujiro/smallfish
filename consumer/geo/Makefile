@@ -33,3 +33,5 @@ restart_container:
 
 test:
 	GOCACHE=off go test . -v
+logs:
+	kubectl logs `kubectl get pod | grep $(MODULE) | awk '{print $$1}'` --follow
