@@ -1,0 +1,55 @@
+<head>
+	<title>Consumer Map</title>
+	<meta name="viewport" content="initial-scale=1.0">
+	<meta charset="utf-8">
+	<script>
+		var map;
+	</script>
+	<script>
+		var changeMap = function(lat,lng){
+			map = new google.maps.Map(document.getElementById('map'), {
+				center: {lat: lat, lng: lng},
+				zoom: 14
+			});
+		}
+	</script>
+	<script>
+		var changeLocation = function() {
+			var doSomethingLoop = function(maxCount, i) {
+				console.log('doSomething:'+i);
+				if (i <= maxCount) {
+					//doSomething();
+					setTimeout(function(){doSomethingLoop(maxCount, ++i)}, 1000);
+				}
+			}
+			var startPos;
+			var geoSuccess = function(position) {
+				startPos = position;
+				console.log('Lat=' + startPos.coords.latitude + ' Lng=' + startPos.coords.longitude);
+				document.getElementById('startLat').innerHTML = startPos.coords.latitude;
+				document.getElementById('startLon').innerHTML = startPos.coords.longitude;
+				changeMap(startPos.coords.latitude,startPos.coords.longitude);
+				doSomethingLoop(10, 0);
+			};
+			navigator.geolocation.getCurrentPosition(geoSuccess);
+		};
+	</script>
+	<script>
+		window.onload = changeLocation;
+	</script>
+	<style>
+#map {
+	height: 500px;
+	width: auto;
+}
+	</style>
+</head>
+<body>
+	<div id="startLat"></div>
+	<div id="startLon"></div>
+	<div id="map"></div>
+	<script src="https://maps.googleapis.com/maps/api/js?key={{.APIKEY}}"></script>
+	<form name="update">
+		<input type="button" value="マップ変更" onClick="changeLocation()">
+	</form>
+</body>

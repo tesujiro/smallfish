@@ -3,9 +3,11 @@ package csgeo
 import (
 	"context"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 	"time"
 
@@ -35,6 +37,17 @@ type ConsumerGeoInfo struct {
 	Timestamp  time.Time `json:"timestamp"`
 	Lat        float64   `json:"latitude"`
 	Lng        float64   `json:"longtitude"`
+}
+
+func (c *Consumer) ConsumerIndex(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Consumer Index Page!!")
+	tpl := template.Must(template.ParseFiles("template/getCurrentPosition.html"))
+	w.Header().Set("Content-Type", "text/html")
+
+	err := tpl.Execute(w, map[string]string{"APIKEY": os.Getenv("APIKEY")})
+	if err != nil {
+		panic(err)
+	}
 }
 
 func (c *Consumer) KafkaProduce(key string, value string) error {
@@ -113,6 +126,7 @@ func (c *Consumer) Router() *mux.Router {
 	r := mux.NewRouter()
 	//r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler).Methods("GET")
 	r.HandleFunc("/consumer/GeoCollection", c.GeoCollectionWriter).Methods("POST")
+	r.HandleFunc("/consumer", c.ConsumerIndex)
 	r.HandleFunc("/", Sleeper)
 	return r
 }
