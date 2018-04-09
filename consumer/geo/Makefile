@@ -31,6 +31,17 @@ restart_container:
 		kubectl delete pod $$p;\
 	done
 
+create_secret:
+ifndef APIKEY
+        $(error APIKEY not set)
+endif
+	echo $$APIKEY > ./apikey.txt
+	kubectl create secret generic google-apikey --from-file=apikey=./apikey.txt
+	
+delete_secret:
+	kubectl delete secret google-apikey
+	rm ./apikey.txt
+
 test:
 	GOCACHE=off go test . -v
 logs:

@@ -18,6 +18,12 @@ spec:
         image: localhost:5000/csgeo
         ports:
         - containerPort: 80
+        env:
+          - name: APIKEY
+            valueFrom:
+              secretKeyRef:
+                name: google-apikey
+                key: apikey
 ---
 apiVersion: v1
 kind: Service
