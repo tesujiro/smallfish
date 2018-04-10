@@ -34,16 +34,17 @@ var doPost = function(a){
 	</script>
 	<script>
 var changeLocation = function() {
-	var doSomethingLoop = function(maxCount, i) {
+	var doSomethingLoop = function(json,maxCount, i) {
 		console.log('doSomething:'+i);
 		if (i <= maxCount) {
 			//doSomething();
-			setTimeout(function(){doSomethingLoop(maxCount, ++i)}, 1000);
+			setTimeout(function(){doSomethingLoop(json,maxCount, ++i)}, 1000);
 		} else {
-			doPost()
+			doPost(json)
 		}
 	}
 	var startPos;
+	var json = [];
 	var geoSuccess = function(position) {
 		startPos = position;
 		console.log('Lat=' + startPos.coords.latitude + ' Lng=' + startPos.coords.longitude);
@@ -54,8 +55,14 @@ var changeLocation = function() {
 		google.maps.event.addListener(map,'click',function(event) {
 			document.getElementById('startLat').innerHTML = event.latLng.lat();
 			document.getElementById('startLon').innerHTML = event.latLng.lng();
+			json.push({
+				"consumerId"	: 1 ,
+				"timestamp"	: new Date() ,
+				"latitude"	: event.latLng.lat() ,
+				"longtitude"	: event.latLng.lng() 
+			});
 		});
-		doSomethingLoop(10, 0);
+		doSomethingLoop(json, 10, 0);
 	};
 	navigator.geolocation.getCurrentPosition(geoSuccess);
 };
