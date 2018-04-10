@@ -37,10 +37,10 @@ ifndef APIKEY
 endif
 	echo $$APIKEY > ./apikey.txt
 	kubectl create secret generic google-apikey --from-file=apikey=./apikey.txt
+	rm ./apikey.txt
 	
 delete_secret:
 	kubectl delete secret google-apikey
-	rm ./apikey.txt
 
 test:
 	GOCACHE=off go test . -v
