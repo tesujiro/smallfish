@@ -4,6 +4,7 @@
 	<meta charset="utf-8">
 	<script>
 var map;
+var timer=0;
 	</script>
 	<script>
 var changeMap = function(lat,lng){
@@ -15,6 +16,8 @@ var changeMap = function(lat,lng){
 	</script>
 	<script>
 var doPost = function(a){
+	if (a.length==0) return;
+	console.log("a.length=="+a.length);
 	var req = new XMLHttpRequest();
 	req.onreadystatechange = function() {
 		if (req.readyState == 4) { // finished sending
@@ -33,18 +36,22 @@ var doPost = function(a){
 }
 	</script>
 	<script>
+var json=[];
 var changeLocation = function() {
-	var doSomethingLoop = function(json,maxCount, i) {
+	clearTimeout(timer);
+	timer=0;
+	var doSomethingLoop = function(maxCount, i) {
 		console.log('doSomething:'+i);
 		if (i <= maxCount) {
 			//doSomething();
-			setTimeout(function(){doSomethingLoop(json,maxCount, ++i)}, 1000);
+			timer=setTimeout(function(){doSomethingLoop(maxCount, ++i)}, 1000);
 		} else {
 			doPost(json)
+			json=[]
+			timer=setTimeout(function(){doSomethingLoop(maxCount, 0)}, 1000);
 		}
 	}
 	var startPos;
-	var json = [];
 	var geoSuccess = function(position) {
 		startPos = position;
 		console.log('Lat=' + startPos.coords.latitude + ' Lng=' + startPos.coords.longitude);
@@ -62,7 +69,7 @@ var changeLocation = function() {
 				"longtitude"	: event.latLng.lng() 
 			});
 		});
-		doSomethingLoop(json, 10, 0);
+		doSomethingLoop(10, 0);
 	};
 	navigator.geolocation.getCurrentPosition(geoSuccess);
 };
