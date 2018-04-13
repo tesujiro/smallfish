@@ -124,6 +124,7 @@ func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 
 func (c *Consumer) Router() *mux.Router {
 	r := mux.NewRouter()
+	//r.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 	//r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler).Methods("GET")
 	r.HandleFunc("/consumer/GeoCollection", c.GeoCollectionWriter).Methods("POST")
 	r.HandleFunc("/consumer/manualTester", c.ConsumerManualTester)
@@ -141,6 +142,7 @@ func Run(ctx context.Context) {
 	consumer := NewConsumer(config)
 
 	http.Handle("/", consumer.Router())
+	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
 
 	log.Printf("Start Go HTTP Server")
 
