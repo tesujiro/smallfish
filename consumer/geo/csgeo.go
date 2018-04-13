@@ -39,8 +39,8 @@ type ConsumerGeoInfo struct {
 	Lng        float64   `json:"longtitude"`
 }
 
-func (c *Consumer) ConsumerIndex(w http.ResponseWriter, r *http.Request) {
-	log.Printf("Consumer Index Page!!")
+func (c *Consumer) ConsumerManualTester(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Consumer Manual Tester Page!!")
 	tpl := template.Must(template.ParseFiles("template/getCurrentPosition.html"))
 	w.Header().Set("Content-Type", "text/html")
 
@@ -126,7 +126,7 @@ func (c *Consumer) Router() *mux.Router {
 	r := mux.NewRouter()
 	//r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler).Methods("GET")
 	r.HandleFunc("/consumer/GeoCollection", c.GeoCollectionWriter).Methods("POST")
-	r.HandleFunc("/consumer", c.ConsumerIndex)
+	r.HandleFunc("/consumer/manualTester", c.ConsumerManualTester)
 	r.HandleFunc("/", Sleeper)
 	return r
 }

@@ -1,10 +1,9 @@
 <head>
-	<title>Consumer Map</title>
+	<title>Consumer Manual Tester</title>
 	<meta name="viewport" content="initial-scale=1.0">
 	<meta charset="utf-8">
 	<script>
 var map;
-var timer=0;
 	</script>
 	<script>
 var changeMap = function(lat,lng){
@@ -15,9 +14,10 @@ var changeMap = function(lat,lng){
 }
 	</script>
 	<script>
-var doPost = function(a){
-	if (a.length==0) return;
-	console.log("a.length=="+a.length);
+var doPost = function(jsonArray){
+	console.log('doPost');
+	if (jsonArray.length==0) return;
+	console.log("jsonArray.length=="+jsonArray.length);
 	var req = new XMLHttpRequest();
 	req.onreadystatechange = function() {
 		if (req.readyState == 4) { // finished sending
@@ -31,46 +31,50 @@ var doPost = function(a){
 	}
 	req.open('POST', '/consumer/GeoCollection', true);
 	req.setRequestHeader("Content-type", "application/json");
-	var parameters = JSON.stringify(a);
+	var parameters = JSON.stringify(jsonArray);
 	req.send(parameters);
 }
 	</script>
 	<script>
-var json=[];
 var changeLocation = function() {
-	clearTimeout(timer);
-	timer=0;
-	var doSomethingLoop = function(maxCount, i) {
-		console.log('doSomething:'+i);
-		if (i <= maxCount) {
-			//doSomething();
-			timer=setTimeout(function(){doSomethingLoop(maxCount, ++i)}, 1000);
-		} else {
-			doPost(json)
-			json=[]
-			timer=setTimeout(function(){doSomethingLoop(maxCount, 0)}, 1000);
-		}
+	var json=[];
+	var clearJson = function() {
+		json=[];
 	}
-	var startPos;
+	var pushJson = function(id,time,lat,lng){
+		json.push({
+			"consumerId"	: id ,
+			"timestamp"	: time ,
+			"latitude"	: lat ,
+			"longtitude"	: lng
+		});
+	}
+	var postTimer=0;
+	var stopPostTimer = function() {
+		clearTimeout(postTimer);
+		postTimer=0;
+	}
+	var postGeoInfo = function() {
+		doPost(json);
+		clearJson();
+		postTimer=setTimeout(function(){postGeoInfo()}, 5000);
+	}
+	var currentPos;
 	var geoSuccess = function(position) {
-		startPos = position;
-		console.log('Lat=' + startPos.coords.latitude + ' Lng=' + startPos.coords.longitude);
-		document.getElementById('startLat').innerHTML = startPos.coords.latitude;
-		document.getElementById('startLon').innerHTML = startPos.coords.longitude;
-		changeMap(startPos.coords.latitude,startPos.coords.longitude);
+		currentPos = position;
+		console.log('Lat=' + currentPos.coords.latitude + ' Lng=' + currentPos.coords.longitude);
+		document.getElementById('currentLat').innerHTML = currentPos.coords.latitude;
+		document.getElementById('currentLon').innerHTML = currentPos.coords.longitude;
+		changeMap(currentPos.coords.latitude,currentPos.coords.longitude);
 		// Update lat/long value of div when anywhere in the map is clicked
 		google.maps.event.addListener(map,'click',function(event) {
-			document.getElementById('startLat').innerHTML = event.latLng.lat();
-			document.getElementById('startLon').innerHTML = event.latLng.lng();
-			json.push({
-				"consumerId"	: 1 ,
-				"timestamp"	: new Date() ,
-				"latitude"	: event.latLng.lat() ,
-				"longtitude"	: event.latLng.lng() 
-			});
+			document.getElementById('currentLat').innerHTML = event.latLng.lat();
+			document.getElementById('currentLon').innerHTML = event.latLng.lng();
+			pushJson(1 ,new Date() , event.latLng.lat() , event.latLng.lng());
 		});
-		doSomethingLoop(10, 0);
+		postGeoInfo();
 	};
+	stopPostTimer();
 	navigator.geolocation.getCurrentPosition(geoSuccess);
 };
 	</script>
@@ -85,8 +89,8 @@ window.onload = changeLocation;
 	</style>
 </head>
 <body>
-	<div id="startLat"></div>
-	<div id="startLon"></div>
+	<div id="currentLat"></div>
+	<div id="currentLon"></div>
 	<div id="map"></div>
 	<script src="https://maps.googleapis.com/maps/api/js?key={{.APIKEY}}"></script>
 	<form name="update">
