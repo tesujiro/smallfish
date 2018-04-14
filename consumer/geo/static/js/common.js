@@ -8,9 +8,8 @@ var changeMap = function(lat,lng){
 }
 
 var doPost = function(jsonArray){
-	console.log('doPost:'+jsonArray);
+	console.log('doPost:'+jsonArray.length);
 	if (jsonArray.length==0) return;
-	//console.log("jsonArray.length=="+jsonArray.length);
 	var req = new XMLHttpRequest();
 	req.onreadystatechange = function() {
 		if (req.readyState == 4) { // finished sending
@@ -31,6 +30,7 @@ var doPost = function(jsonArray){
 function geoInfo() {
 	this.json = [];
 	this.postTimer = 0;
+	this.Timeout = 5000;
 };
 geoInfo.prototype = {
 	//json      : [] ,
@@ -51,38 +51,17 @@ geoInfo.prototype = {
 		clearTimeout(this.postTimer);
 		this.postTimer=0;
 	},
+	startPost: function(){
+		this.postTimer=setTimeout(this.post.bind(this), this.Timeout);
+	},
 	post          : function() {
 		doPost(this.json);
 		this.clearJson();
-		this.postTimer=setTimeout(this.post.bind(this), 5000);
+		this.postTimer=setTimeout(this.post.bind(this), this.Timeout);
 	}
 }
 
 var changeLocation = function() {
-	/*
-	var json=[];
-	var clearJson = function() {
-		json=[];
-	}
-	var pushJson = function(id,time,lat,lng){
-		json.push({
-			"consumerId"	: id ,
-			"timestamp"	: time ,
-			"latitude"	: lat ,
-			"longtitude"	: lng
-		});
-	}
-	var postTimer=0;
-	var stopPostTimer = function() {
-		clearTimeout(postTimer);
-		postTimer=0;
-	}
-	var postGeoInfo = function() {
-		doPost(json);
-		clearJson();
-		postTimer=setTimeout(function(){postGeoInfo()}, 5000);
-	}
-	*/
 
 	var info = new geoInfo();
 	var currentPos;
@@ -96,15 +75,10 @@ var changeLocation = function() {
 		google.maps.event.addListener(map,'click',function(event) {
 			document.getElementById('currentLat').innerHTML = event.latLng.lat();
 			document.getElementById('currentLon').innerHTML = event.latLng.lng();
-			//pushJson(1 ,new Date() , event.latLng.lat() , event.latLng.lng());
 			info.pushJson(1 ,new Date() , event.latLng.lat() , event.latLng.lng());
-			//console.log("info:"+info.json.length);
 		});
-		//postGeoInfo();
-		console.log("before post info:"+info.json.length);
-		info.post();
+		info.startPost();
 	};
-	//stopPostTimer();
 	info.stopPostTimer();
 	navigator.geolocation.getCurrentPosition(geoSuccess);
 };
