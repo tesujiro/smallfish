@@ -41,7 +41,7 @@ type ConsumerGeoInfo struct {
 
 func (c *Consumer) ConsumerManualTester(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Consumer Manual Tester Page!!")
-	tpl := template.Must(template.ParseFiles("template/getCurrentPosition.html"))
+	tpl := template.Must(template.ParseFiles("template/ManualTester.html"))
 	w.Header().Set("Content-Type", "text/html")
 
 	err := tpl.Execute(w, map[string]string{"APIKEY": os.Getenv("APIKEY")})
