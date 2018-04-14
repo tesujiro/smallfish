@@ -39,6 +39,17 @@ type ConsumerGeoInfo struct {
 	Lng        float64   `json:"longtitude"`
 }
 
+func (c *Consumer) ConsumerAutoPost(w http.ResponseWriter, r *http.Request) {
+	log.Printf("Consumer Auto Post Page!!")
+	tpl := template.Must(template.ParseFiles("template/AutoPost.html"))
+	w.Header().Set("Content-Type", "text/html")
+
+	err := tpl.Execute(w, map[string]string{"APIKEY": os.Getenv("APIKEY")})
+	if err != nil {
+		panic(err)
+	}
+}
+
 func (c *Consumer) ConsumerManualTester(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Consumer Manual Tester Page!!")
 	tpl := template.Must(template.ParseFiles("template/ManualTester.html"))
@@ -128,6 +139,7 @@ func (c *Consumer) Router() *mux.Router {
 	//r.HandleFunc("/consumer/@{latitude:[0-9]+.?[0-9]+},{longtitude:[0-9]+.?[0-9]+}", ConsumerHandler).Methods("GET")
 	r.HandleFunc("/consumer/GeoCollection", c.GeoCollectionWriter).Methods("POST")
 	r.HandleFunc("/consumer/manualTester", c.ConsumerManualTester)
+	r.HandleFunc("/consumer/auto", c.ConsumerAutoPost)
 	r.HandleFunc("/", Sleeper)
 	return r
 }

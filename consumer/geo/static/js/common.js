@@ -30,7 +30,8 @@ var doPost = function(jsonArray){
 function geoInfo() {
 	this.json = [];
 	this.postTimer = 0;
-	this.Timeout = 5000;
+	//this.Timeout = 5000; // 5 seconds
+	this.Timeout = 60000; // 60 seconds
 };
 geoInfo.prototype = {
 	//json      : [] ,
@@ -52,6 +53,7 @@ geoInfo.prototype = {
 		this.postTimer=0;
 	},
 	startPost: function(){
+		this.stopPostTimer(); // avoid duplicate timer
 		this.postTimer=setTimeout(this.post.bind(this), this.Timeout);
 	},
 	post          : function() {
@@ -79,6 +81,49 @@ var changeLocation = function() {
 		});
 		info.startPost();
 	};
-	info.stopPostTimer();
 	navigator.geolocation.getCurrentPosition(geoSuccess);
+};
+
+function autoPost() {
+	this.info = new geoInfo();
+	//this.Timeout = 1000; // 1 second
+	this.Timeout = 10000; // 10 seconds
+	this.postTimer = 0;
+};
+
+autoPost.prototype = {
+	stopAutoPostTimer : function() {
+		clearTimeout(this.postTimer);
+		this.postTimer = 0;
+	},
+	autoGeo : function() {
+		var geoSuccess = function(position) {
+			currentPos = position;
+			console.log('Lat=' + currentPos.coords.latitude + ' Lng=' + currentPos.coords.longitude);
+			document.getElementById('currentLat').innerHTML = currentPos.coords.latitude;
+			document.getElementById('currentLon').innerHTML = currentPos.coords.longitude;
+			this.info.pushJson(1 ,new Date() , currentPos.coords.latitude ,currentPos.coords.longitude); 
+			this.postTimer=setTimeout(this.autoGeo.bind(this), this.Timeout);
+		};
+		navigator.geolocation.getCurrentPosition(geoSuccess.bind(this));
+	},
+	start : function() {
+		this.stopAutoPostTimer(); // avoid duplicate timer
+		this.info.stopPostTimer();
+		this.postTimer = setTimeout(this.autoGeo.bind(this), this.Timeout);
+		this.info.startPost();
+	},
+	stop : function() {
+		this.stopAutoPostTimer();
+		this.info.stopPostTimer();
+	}
+}
+
+var post ;
+var startAutoPost = function() {
+	post = new autoPost();
+	post.start()
+};
+var stopAutoPost = function() {
+	post.stop()
 };
