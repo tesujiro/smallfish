@@ -41,7 +41,8 @@ endif
 	
 delete_secret:
 	kubectl delete secret google-apikey
-
+ssh:
+	kubectl exec -it `kubectl get pod | grep $(MODULE) | head -1 | awk '{print $$1}'` /bin/bash
 test:
 	GOCACHE=off go test . -v
 logs:
