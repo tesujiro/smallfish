@@ -6,4 +6,5 @@ ADD ./template /template
 ADD ./static /static
 ADD ./ssl /ssl
 EXPOSE 80
+EXPOSE 443
 CMD ["/csgeo","-kafka_server","my-kafka-kafka","-kafka_port","9092"]
