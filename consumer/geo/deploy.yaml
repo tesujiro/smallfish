@@ -39,6 +39,11 @@ spec:
     targetPort: 80
     nodePort: 31080
     name: http
+  - protocol: TCP
+    port: 443
+    targetPort: 443
+    nodePort: 31443
+    name: https
   selector:
     app: csgeo
     #version: v1
