@@ -1,5 +1,8 @@
 MODULE=csgeo
 GOOS=linux
+SSL_KEY=ssl/server.key
+SSL_CSR=ssl/server.csr
+SSL_CRT=ssl/server.crt
 
 install:
 	kubectl apply -f deploy.yaml
@@ -47,3 +50,8 @@ test:
 	GOCACHE=off go test . -v
 logs:
 	kubectl logs `kubectl get pod | grep $(MODULE) | awk '{print $$1}'` --follow
+
+ssl_certificate:
+	openssl genrsa 2048 > $(SSL_KEY)
+	openssl req -new -key $(SSL_KEY) > $(SSL_CSR)
+	openssl x509 -days 3650 -req -signkey $(SSL_KEY) < $(SSL_CSR) > $(SSL_CRT)
