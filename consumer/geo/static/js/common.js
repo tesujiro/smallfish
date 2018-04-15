@@ -30,8 +30,8 @@ var doPost = function(jsonArray){
 function geoInfo() {
 	this.json = [];
 	this.postTimer = 0;
-	//this.Timeout = 5000; // 5 seconds
-	this.Timeout = 60000; // 60 seconds
+	//this.Interval = 5000; // 5 seconds
+	this.Interval = 60000; // 60 seconds
 };
 geoInfo.prototype = {
 	//json      : [] ,
@@ -54,12 +54,12 @@ geoInfo.prototype = {
 	},
 	startPost: function(){
 		this.stopPostTimer(); // avoid duplicate timer
-		this.postTimer=setTimeout(this.post.bind(this), this.Timeout);
+		this.postTimer=setTimeout(this.post.bind(this), this.Interval);
 	},
 	post          : function() {
 		doPost(this.json);
 		this.clearJson();
-		this.postTimer=setTimeout(this.post.bind(this), this.Timeout);
+		this.postTimer=setTimeout(this.post.bind(this), this.Interval);
 	}
 }
 
@@ -81,13 +81,13 @@ var changeLocation = function() {
 		});
 		info.startPost();
 	};
-	navigator.geolocation.getCurrentPosition(geoSuccess);
+	navigator.geolocation.getCurrentPosition(geoSuccess,function (err) { alert(err.message); },{ enableHighAccuracy: true, timeout : 5000 });
 };
 
 function autoPost() {
 	this.info = new geoInfo();
-	//this.Timeout = 1000; // 1 second
-	this.Timeout = 10000; // 10 seconds
+	//this.Interval = 1000; // 1 second
+	this.Interval = 10000; // 10 seconds
 	this.postTimer = 0;
 };
 
@@ -103,14 +103,14 @@ autoPost.prototype = {
 			document.getElementById('currentLat').innerHTML = currentPos.coords.latitude;
 			document.getElementById('currentLon').innerHTML = currentPos.coords.longitude;
 			this.info.pushJson(1 ,new Date() , currentPos.coords.latitude ,currentPos.coords.longitude); 
-			this.postTimer=setTimeout(this.autoGeo.bind(this), this.Timeout);
+			this.postTimer=setTimeout(this.autoGeo.bind(this), this.Interval);
 		};
 		navigator.geolocation.getCurrentPosition(geoSuccess.bind(this));
 	},
 	start : function() {
 		this.stopAutoPostTimer(); // avoid duplicate timer
 		this.info.stopPostTimer();
-		this.postTimer = setTimeout(this.autoGeo.bind(this), this.Timeout);
+		this.postTimer = setTimeout(this.autoGeo.bind(this), this.Interval);
 		this.info.startPost();
 	},
 	stop : function() {
