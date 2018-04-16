@@ -158,8 +158,13 @@ func Run(ctx context.Context) {
 
 	log.Printf("Start Go HTTP Server")
 
-	//err = http.ListenAndServe(":"+strconv.Itoa(consumer.config.http_port), nil)
-	//err = http.ListenAndServeTLS(":50124", "ssl/server.crt", "ssl/server.key", nil)
+	go func() {
+		err = http.ListenAndServe(":"+strconv.Itoa(consumer.config.http_port), nil)
+		if err != nil {
+			log.Fatal("ListenAndServe: ", err)
+		}
+	}()
+
 	err = http.ListenAndServeTLS(":"+strconv.Itoa(consumer.config.https_port), "ssl/server.crt", "ssl/server.key", nil)
 
 	if err != nil {
