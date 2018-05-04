@@ -8,6 +8,7 @@ install: install_kafka
 #install_zk:
 	#helm install --name $(ZOOKEEPER_NAME) incubator/zookeeper
 install_kafka:
+	helm repo add incubator http://storage.googleapis.com/kubernetes-charts-incubator
 	helm install --name $(BROKER_NAME) -f values.yaml incubator/kafka
 	#helm install --name $(BROKER_NAME) incubator/kafka
 
