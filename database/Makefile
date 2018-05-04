@@ -3,3 +3,5 @@ all:
 
 delete:
 	kubectl delete -f cockroachdb-statefulset.yaml
+build:
+	go build *.go
