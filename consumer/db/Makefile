@@ -32,6 +32,10 @@ restart_container:
 		kubectl delete pod $$p;\
 	done
 
+private_registry:
+	docker pull registry:2.3.0
+	docker run -d -p 5000:5000 -v /var/opt:/var/lib/registry --restart=always --name private_registry registry:2.3.0
+
 log:
 	kubectl logs `kubectl get pod | grep $(MODULE) | awk '{print $$1}'` --follow
 
