@@ -2,16 +2,17 @@ package main
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	_ "github.com/lib/pq"
+	csproto "github.com/tesujiro/smallfish/consumer/proto"
 )
 
 type Consumer struct {
@@ -22,12 +23,14 @@ func NewConsumer(c *Config) *Consumer {
 	return &Consumer{config: *c}
 }
 
+/*
 type ConsumerGeoInfo struct {
 	ConsumerId int       `json:"consumerId"`
 	Timestamp  time.Time `json:"timestamp"`
 	Lat        float64   `json:"latitude"`
 	Lng        float64   `json:"longtitude"`
 }
+*/
 
 func (c *Consumer) connect() (*sql.DB, error) {
 	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", c.config.db_user, c.config.db_host, c.config.db_port, c.config.db_name)
@@ -39,7 +42,8 @@ func (c *Consumer) connect() (*sql.DB, error) {
 	return db, err
 }
 
-func (c *Consumer) addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
+//func (c *Consumer) addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
+func (c *Consumer) addConsumerGeo(db *sql.DB, geo *csproto.ConsumerGeo_Item) error {
 	// Insert two rows into the "location" table.
 	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES ($1,$2,$3,$4)")
 	if err != nil {
@@ -48,15 +52,15 @@ func (c *Consumer) addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
 	}
 	defer stmt.Close() // danger!
 
-	res, err := stmt.Exec(geo.ConsumerId, geo.Timestamp, geo.Lat, geo.Lng)
+	res, err := stmt.Exec(geo.ConsumerId, ptypes.TimestampString(geo.Timestamp), geo.Lat, geo.Lng)
 	if err != nil {
-		log.Printf("exec statement faled!!")
+		log.Printf("exec statement failed!!")
 		return err
 	}
 
 	rowCnt, err := res.RowsAffected()
 	if err != nil {
-		log.Printf("get rows affected faled!!")
+		log.Printf("get rows affected failed!!")
 		return err
 	}
 	log.Printf("affected = %d\n", rowCnt)
@@ -65,10 +69,16 @@ func (c *Consumer) addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
 }
 
 func (c *Consumer) ConsumerGeoCollectionWriter(key, value []byte) error {
-	var geos []ConsumerGeoInfo
-	err := json.Unmarshal(value, &geos)
-	if err != nil {
-		log.Printf("json.Unmarshal failed!! %v", err)
+	//var geos []ConsumerGeoInfo
+	//err := json.Unmarshal(value, &geos)
+	//if err != nil {
+	//log.Printf("json.Unmarshal failed!! %v", err)
+	//log.Printf("json:%s", string(value))
+	//return err
+	//}
+	geos := &csproto.ConsumerGeo{}
+	if err := proto.Unmarshal(value, geos); err != nil {
+		log.Printf("proto.Unmarshal failed!! %v", err)
 		log.Printf("json:%s", string(value))
 		return err
 	}
@@ -87,7 +97,8 @@ func (c *Consumer) ConsumerGeoCollectionWriter(key, value []byte) error {
 	}
 	defer tx.Rollback()
 
-	for _, geo := range geos {
+	//for _, geo := range geos {
+	for _, geo := range geos.ConsumerGeo {
 		log.Printf("%v\n", geo)
 		if err := c.addConsumerGeo(db, geo); err != nil {
 			log.Fatal(err)
@@ -153,7 +164,7 @@ func main() {
 				log.Println(err)
 			case msg := <-consumer.Messages():
 				msgCount++
-				log.Println("Received messages", string(msg.Key), string(msg.Value))
+				log.Println("Received messages", string(msg.Key))
 				c.ConsumerGeoCollectionWriter(msg.Key, msg.Value)
 			case <-signals:
 				log.Println("SIGTERM is detected")

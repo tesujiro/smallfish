@@ -36,8 +36,11 @@ private_registry:
 	docker pull registry:2.3.0
 	docker run -d -p 5000:5000 -v /var/opt:/var/lib/registry --restart=always --name private_registry registry:2.3.0
 
-log:
+logs:
 	kubectl logs `kubectl get pod | grep $(MODULE) | awk '{print $$1}'` --follow
 
 test:
 	GOCACHE=off go test . -v
+
+protobuf:
+	protoc -I=./ --go_out=./ ./*.proto

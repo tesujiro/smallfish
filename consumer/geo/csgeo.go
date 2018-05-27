@@ -2,6 +2,7 @@ package csgeo
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"io"
@@ -12,8 +13,11 @@ import (
 	"time"
 
 	"github.com/Shopify/sarama"
+	"github.com/golang/protobuf/proto"
+	"github.com/golang/protobuf/ptypes"
 	"github.com/gorilla/mux"
 	_ "github.com/lib/pq"
+	csproto "github.com/tesujiro/smallfish/consumer/proto"
 )
 
 func Sleeper(w http.ResponseWriter, r *http.Request) {
@@ -61,7 +65,8 @@ func (c *Consumer) ConsumerManualTester(w http.ResponseWriter, r *http.Request) 
 	}
 }
 
-func (c *Consumer) KafkaProduce(key string, value string) error {
+//func (c *Consumer) KafkaProduce(key string, value string) error {
+func (c *Consumer) KafkaProduce(key string, value []byte) error {
 	log.Printf("Start sending messages to Kafka\n")
 	// Setup configuration
 	config := sarama.NewConfig()
@@ -89,12 +94,44 @@ func (c *Consumer) KafkaProduce(key string, value string) error {
 		}
 	}()
 
+	// JSON to ProtoBuf
+	var geos []ConsumerGeoInfo
+	if err := json.Unmarshal(value, &geos); err != nil {
+		log.Printf("json.Unmarshal failed!! %v\n", err)
+		log.Printf("json:%s\n", string(value))
+		return err
+	}
+
+	geos_proto := &csproto.ConsumerGeo{}
+	for _, geo := range geos {
+		ts, err := ptypes.TimestampProto(geo.Timestamp)
+		if err != nil {
+			log.Printf("ptypes.TimestampProto failed!! %v\n", err)
+			return err
+		}
+		geos_proto.ConsumerGeo = append(geos_proto.ConsumerGeo, &csproto.ConsumerGeo_Item{
+			ConsumerId: int64(geo.ConsumerId),
+			Timestamp:  ts,
+			Lat:        geo.Lat,
+			Lng:        geo.Lng,
+		})
+	}
+
+	msg, err := proto.Marshal(geos_proto)
+	if err != nil {
+		log.Printf("proto.Marshal failed!! %v\n", err)
+		log.Printf("json:%s\n", geos)
+		return err
+	}
+
+	// send a message to kafka
 	producer.Input() <- &sarama.ProducerMessage{
 		Topic: c.config.kafka_topic,
 		Key:   sarama.StringEncoder(key),
-		Value: sarama.StringEncoder(value),
+		//Value: sarama.StringEncoder(value),
+		Value: sarama.ByteEncoder(msg),
 	}
-	log.Printf("key=%v value=%v\n", key, value)
+	log.Printf("key=%v value=%v\n", key, geos)
 
 	return nil
 }
@@ -126,7 +163,8 @@ func (c *Consumer) GeoCollectionWriter(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Content-Length:%v", length)
 
 	//Kafka
-	if err := c.KafkaProduce(r.RemoteAddr, string(body)); err != nil {
+	//if err := c.KafkaProduce(r.RemoteAddr, string(body)); err != nil {
+	if err := c.KafkaProduce(r.RemoteAddr, body); err != nil {
 		log.Printf("Kafka produce failed!!")
 	}
 
