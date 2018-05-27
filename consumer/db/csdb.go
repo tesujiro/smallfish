@@ -15,25 +15,8 @@ import (
 	csproto "github.com/tesujiro/smallfish/consumer/proto"
 )
 
-type Consumer struct {
-	config Config
-}
-
-func NewConsumer(c *Config) *Consumer {
-	return &Consumer{config: *c}
-}
-
-/*
-type ConsumerGeoInfo struct {
-	ConsumerId int       `json:"consumerId"`
-	Timestamp  time.Time `json:"timestamp"`
-	Lat        float64   `json:"latitude"`
-	Lng        float64   `json:"longtitude"`
-}
-*/
-
-func (c *Consumer) connect() (*sql.DB, error) {
-	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", c.config.db_user, c.config.db_host, c.config.db_port, c.config.db_name)
+func connect(c *Config) (*sql.DB, error) {
+	url := fmt.Sprintf("postgresql://%s@%s:%d/%s?sslmode=disable", c.db_user, c.db_host, c.db_port, c.db_name)
 	db, err := sql.Open("postgres", url)
 	if err != nil {
 		//log.Fatal("error connecting to the database: ", err)
@@ -42,7 +25,26 @@ func (c *Consumer) connect() (*sql.DB, error) {
 	return db, err
 }
 
-//func (c *Consumer) addConsumerGeo(db *sql.DB, geo ConsumerGeoInfo) error {
+type Consumer struct {
+	config Config
+	conn   *sql.DB
+}
+
+func newConsumer(c *Config) *Consumer {
+	//database connect
+	db, err := connect(c)
+	if err != nil {
+		log.Printf("database connect failed!!")
+		panic(err)
+	}
+
+	return &Consumer{config: *c, conn: db}
+}
+
+func (c *Consumer) finalize() error {
+	return c.conn.Close()
+}
+
 func (c *Consumer) addConsumerGeo(db *sql.DB, geo *csproto.ConsumerGeo_Item) error {
 	// Insert two rows into the "location" table.
 	stmt, err := db.Prepare("INSERT INTO location (id, time, lat, lng) VALUES ($1,$2,$3,$4)")
@@ -68,39 +70,17 @@ func (c *Consumer) addConsumerGeo(db *sql.DB, geo *csproto.ConsumerGeo_Item) err
 	return nil
 }
 
-func (c *Consumer) ConsumerGeoCollectionWriter(key, value []byte) error {
-	//var geos []ConsumerGeoInfo
-	//err := json.Unmarshal(value, &geos)
-	//if err != nil {
-	//log.Printf("json.Unmarshal failed!! %v", err)
-	//log.Printf("json:%s", string(value))
-	//return err
-	//}
-	geos := &csproto.ConsumerGeo{}
-	if err := proto.Unmarshal(value, geos); err != nil {
-		log.Printf("proto.Unmarshal failed!! %v", err)
-		log.Printf("json:%s", string(value))
-		return err
-	}
-
-	//database
-	db, err := c.connect()
-	if err != nil {
-		log.Printf("database connect failed!!")
-		return err
-	}
-
-	tx, err := db.Begin()
+func (c *Consumer) ConsumerGeoCollectionWriter(geos *csproto.ConsumerGeo) error {
+	tx, err := c.conn.Begin()
 	if err != nil {
 		log.Printf("transaction begin failed!!")
 		return err
 	}
 	defer tx.Rollback()
 
-	//for _, geo := range geos {
 	for _, geo := range geos.ConsumerGeo {
 		log.Printf("%v\n", geo)
-		if err := c.addConsumerGeo(db, geo); err != nil {
+		if err := c.addConsumerGeo(c.conn, geo); err != nil {
 			log.Fatal(err)
 			return err
 		}
@@ -122,7 +102,8 @@ func main() {
 		log.Printf("init config failed: %v", err)
 	}
 
-	c := NewConsumer(config)
+	c := newConsumer(config)
+	defer c.finalize()
 
 	srmConf := sarama.NewConfig()
 	srmConf.Consumer.Return.Errors = true
@@ -165,7 +146,14 @@ func main() {
 			case msg := <-consumer.Messages():
 				msgCount++
 				log.Println("Received messages", string(msg.Key))
-				c.ConsumerGeoCollectionWriter(msg.Key, msg.Value)
+				geos := &csproto.ConsumerGeo{}
+				if err := proto.Unmarshal(msg.Value, geos); err != nil {
+					log.Printf("proto.Unmarshal failed!! %v", err)
+					log.Printf("json:%s", string(msg.Value))
+				}
+				if err := c.ConsumerGeoCollectionWriter(geos); err != nil {
+					log.Printf("ConsumerGeoCollectionWriter failed!! %v", err)
+				}
 			case <-signals:
 				log.Println("SIGTERM is detected")
 				doneCh <- struct{}{}
