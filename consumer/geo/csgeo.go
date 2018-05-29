@@ -9,7 +9,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 
 	"github.com/Shopify/sarama"
@@ -29,11 +31,30 @@ func Sleeper(w http.ResponseWriter, r *http.Request) {
 }
 
 type Consumer struct {
-	config Config
+	config   Config
+	producer sarama.AsyncProducer
 }
 
 func NewConsumer(c *Config) *Consumer {
-	return &Consumer{config: *c}
+	// Setup configuration
+	config := sarama.NewConfig()
+	// Return specifies what channels will be populated.
+	// If they are set to true, you must read from
+	// config.Producer.Return.Successes = true
+	// The total number of times to retry sending a message (default 3).
+	config.Producer.Retry.Max = 5
+	// The level of acknowledgement reliability needed from the broker.
+	config.Producer.RequiredAcks = sarama.WaitForAll
+	//brokers := []string{"localhost:9092"}
+	//brokers := []string{"my-kafka-kafka:9092"}
+	brokers := []string{fmt.Sprintf("%s:%d", c.kafka_host, c.kafka_port)}
+	log.Printf("brokers=%v\n", brokers)
+	producer, err := sarama.NewAsyncProducer(brokers, config)
+	if err != nil {
+		// Should not reach here
+		panic(err)
+	}
+	return &Consumer{config: *c, producer: producer}
 }
 
 type ConsumerGeoInfo struct {
@@ -68,31 +89,6 @@ func (c *Consumer) ConsumerManualTester(w http.ResponseWriter, r *http.Request) 
 //func (c *Consumer) KafkaProduce(key string, value string) error {
 func (c *Consumer) KafkaProduce(key string, value []byte) error {
 	log.Printf("Start sending messages to Kafka\n")
-	// Setup configuration
-	config := sarama.NewConfig()
-	// Return specifies what channels will be populated.
-	// If they are set to true, you must read from
-	// config.Producer.Return.Successes = true
-	// The total number of times to retry sending a message (default 3).
-	config.Producer.Retry.Max = 5
-	// The level of acknowledgement reliability needed from the broker.
-	config.Producer.RequiredAcks = sarama.WaitForAll
-	//brokers := []string{"localhost:9092"}
-	//brokers := []string{"my-kafka-kafka:9092"}
-	brokers := []string{fmt.Sprintf("%s:%d", c.config.kafka_host, c.config.kafka_port)}
-	log.Printf("brokers=%v\n", brokers)
-	producer, err := sarama.NewAsyncProducer(brokers, config)
-	if err != nil {
-		// Should not reach here
-		panic(err)
-	}
-
-	defer func() {
-		if err := producer.Close(); err != nil {
-			// Should not reach here
-			panic(err)
-		}
-	}()
 
 	// JSON to ProtoBuf
 	var geos []ConsumerGeoInfo
@@ -125,7 +121,7 @@ func (c *Consumer) KafkaProduce(key string, value []byte) error {
 	}
 
 	// send a message to kafka
-	producer.Input() <- &sarama.ProducerMessage{
+	c.producer.Input() <- &sarama.ProducerMessage{
 		Topic: c.config.kafka_topic,
 		Key:   sarama.StringEncoder(key),
 		//Value: sarama.StringEncoder(value),
@@ -193,6 +189,25 @@ func Run(ctx context.Context) {
 
 	http.Handle("/", consumer.Router())
 	http.Handle("/static/", http.StripPrefix("/static/", http.FileServer(http.Dir("static"))))
+
+	go func() {
+		//sigchan := make(chan os.Signal, 1)
+		//signal.Notify(sigchan, os.Interrupt, os.Kill)
+		signal_chan := make(chan os.Signal, 1)
+		signal.Notify(signal_chan,
+			syscall.SIGHUP,
+			syscall.SIGINT,
+			syscall.SIGTERM,
+			syscall.SIGQUIT)
+		<-signal_chan
+		log.Println("Shutting down...")
+
+		if err := consumer.producer.Close(); err != nil {
+			// Should not reach here
+			panic(err)
+		}
+
+	}()
 
 	log.Printf("Start Go HTTP Server")
 
