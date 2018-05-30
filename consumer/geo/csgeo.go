@@ -116,7 +116,7 @@ func (c *Consumer) KafkaProduce(key string, value []byte) error {
 	msg, err := proto.Marshal(geos_proto)
 	if err != nil {
 		log.Printf("proto.Marshal failed!! %v\n", err)
-		log.Printf("json:%s\n", geos)
+		log.Printf("json:%v\n", geos_proto)
 		return err
 	}
 
