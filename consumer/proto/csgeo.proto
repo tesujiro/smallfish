@@ -1,0 +1,14 @@
+syntax = "proto3";
+package proto;
+import "google/protobuf/timestamp.proto";
+
+message ConsumerGeo{
+	message Item{
+		int64 ConsumerId = 1;
+		google.protobuf.Timestamp Timestamp = 2;
+		double Lat = 3;
+		double Lng = 4;
+	}
+
+	repeated Item ConsumerGeo = 1;
+}
