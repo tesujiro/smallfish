@@ -144,7 +144,7 @@ zookeeper:
   resources: 
     requests:
       cpu: 100m
-      memory: 256Mi
+      memory: 64Mi
 
   ## The JVM heap size to allocate to Zookeeper
   #heap: "1G"
