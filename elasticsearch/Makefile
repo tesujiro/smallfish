@@ -22,8 +22,16 @@ delete:
 	- helm delete --purge $(BROKER_NAME)
 
 port_forward:
-	export POD_NAME=$(kubectl get pods --namespace default -l "app=elasticsearch,component=client,release=smallfish" -o jsonpath="{.items[0].metadata.name}")
+	#export POD_NAME=$$(kubectl get pods --namespace default -l "app=elasticsearch,component=client,release=smallfish" -o jsonpath="{.items[0].metadata.name}")
 	echo "Visit http://127.0.0.1:9200 to use Elasticsearch"
-	kubectl port-forward --namespace default $POD_NAME 9200:9200
+	kubectl port-forward --namespace default `kubectl get pods --namespace default -l "app=elasticsearch,component=client,release=smallfish" -o jsonpath="{.items[0].metadata.name}"` 9200:9200
 
+create_schema:
+	curl -XPUT "http://localhost:9200/consumers/"
+	curl -XPUT "http://localhost:9200/consumers/status/_mapping" -d '{ "status" : { "properties" : { "location" : { "type" : "geo_point" } } } }'
+	curl "http://localhost:9200/_aliases?pretty"
+
+delete_schema:
+	curl -XDELETE "http://localhost:9200/consumers/"
+	curl "http://localhost:9200/_aliases?pretty"
 
