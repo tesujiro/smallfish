@@ -16,4 +16,5 @@ connect:
 		--image=cockroachdb/cockroach \
 		--restart=Never \
 		--command -- ./cockroach sql --insecure --host $(RELEASE)-cockroachdb-public
-
+build: *.go
+	go build *.go
